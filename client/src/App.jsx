@@ -22,6 +22,10 @@ import NewsView       from './views/NewsView';
 import DuelView       from './views/DuelView';
 import ShipView       from './views/ShipView';
 import MapsView       from './views/MapsView';
+import BackpackView   from './views/BackpackView';
+import StatsView      from './views/StatsView';
+import LoungeView     from './views/LoungeView';
+import MapView        from './views/MapView';
 
 export default function App() {
   const [user, setUser]         = useState(() => JSON.parse(localStorage.getItem('nexus_user') || 'null'));
@@ -137,6 +141,10 @@ export default function App() {
           {view === 'duel'       && <DuelView key={viewKey} />}
           {view === 'ship'       && <ShipView key={viewKey} />}
           {view === 'maps'       && <MapsView key={viewKey} />}
+          {view === 'backpack'   && <BackpackView key={viewKey} />}
+          {view === 'stats'      && <StatsView key={viewKey} />}
+          {view === 'lounge'     && <LoungeView key={viewKey} />}
+          {view === 'map'        && <MapView key={viewKey} />}
         </div>
       </main>
     </div>
