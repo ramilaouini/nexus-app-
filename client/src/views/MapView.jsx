@@ -25,85 +25,115 @@ export default function MapView() {
     }
 
     const scriptId = 'leaflet-js';
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
+    let script = document.getElementById(scriptId);
+    if (!script) {
+      script = document.createElement('script');
       script.id = scriptId;
       script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      script.onload = () => setMapLoaded(true);
       document.body.appendChild(script);
-    } else {
-      setMapLoaded(true);
     }
+
+    // Safety: poll for L variable to guarantee it is bound to the window object
+    const pollInterval = setInterval(() => {
+      if (window.L) {
+        setMapLoaded(true);
+        clearInterval(pollInterval);
+      }
+    }, 100);
+
+    return () => clearInterval(pollInterval);
   }, []);
 
   useEffect(() => {
-    if (!mapLoaded || !mapContainerRef.current || mapInstanceRef.current) return;
+    if (!mapLoaded || !mapContainerRef.current) return;
 
-    // Initialize Leaflet map instance centered near Mediterranean
-    const map = window.L.map(mapContainerRef.current, {
-      center: [25, 10],
-      zoom: 2,
-      minZoom: 1.5,
-      maxZoom: 12,
-      zoomControl: false
-    });
-    mapInstanceRef.current = map;
-
-    // Apply stunning dark theme tiles (CartoDB Dark Matter)
-    window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-    }).addTo(map);
+    // Safety check: clear any existing initialized DOM elements or Leaflet metadata inside container
+    if (mapContainerRef.current._leaflet_id) {
+      mapContainerRef.current.innerHTML = '';
+      mapContainerRef.current._leaflet_id = null;
+    }
 
     // Custom CSS for glowing pulsing markers
-    const style = document.createElement('style');
-    style.innerHTML = `
-      .glowing-marker {
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        background: #fff;
-        position: relative;
-        box-shadow: 0 0 10px rgba(255,255,255,0.8);
-      }
-      .glowing-marker::after {
-        content: '';
-        position: absolute;
-        width: 300%;
-        height: 300%;
-        border-radius: 50%;
-        background: inherit;
-        opacity: 0.3;
-        top: -100%;
-        left: -100%;
-        animation: pulse-ring 2s infinite;
-      }
-      @keyframes pulse-ring {
-        0% { transform: scale(0.3); opacity: 0.8; }
-        100% { transform: scale(1.5); opacity: 0; }
-      }
-    `;
-    document.head.appendChild(style);
+    if (!document.getElementById('custom-marker-style')) {
+      const style = document.createElement('style');
+      style.id = 'custom-marker-style';
+      style.innerHTML = `
+        .glowing-marker {
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          background: #fff;
+          position: relative;
+          box-shadow: 0 0 10px rgba(255,255,255,0.8);
+        }
+        .glowing-marker::after {
+          content: '';
+          position: absolute;
+          width: 300%;
+          height: 300%;
+          border-radius: 50%;
+          background: inherit;
+          opacity: 0.3;
+          top: -100%;
+          left: -100%;
+          animation: pulse-ring 2s infinite;
+        }
+        @keyframes pulse-ring {
+          0% { transform: scale(0.3); opacity: 0.8; }
+          100% { transform: scale(1.5); opacity: 0; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
 
-    // Plot our global hubs with customized glowing markers
-    HUBS.forEach(hub => {
-      const customIcon = window.L.divIcon({
-        className: 'custom-div-icon',
-        html: `<div class="glowing-marker" style="border: 3px solid ${hub.color}; background: #fff; box-shadow: 0 0 15px ${hub.color};"></div>`,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10]
+    let map;
+    try {
+      map = window.L.map(mapContainerRef.current, {
+        center: [25, 10],
+        zoom: 2,
+        minZoom: 1,
+        maxZoom: 12,
+        zoomControl: true
+      });
+      mapInstanceRef.current = map;
+
+      // Apply CartoDB Dark Matter map tile layers (Clean, countries & borders visible)
+      window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap &copy; CARTO'
+      }).addTo(map);
+
+      // Plot our custom glowing hubs
+      HUBS.forEach(hub => {
+        const customIcon = window.L.divIcon({
+          className: 'custom-div-icon',
+          html: `<div class="glowing-marker" style="border: 3px solid ${hub.color}; background: #fff; box-shadow: 0 0 15px ${hub.color};"></div>`,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8]
+        });
+
+        const marker = window.L.marker(hub.coords, { icon: customIcon }).addTo(map);
+        
+        marker.on('click', () => {
+          setSelectedHub(hub);
+          map.setView(hub.coords, 5, { animate: true });
+        });
       });
 
-      const marker = window.L.marker(hub.coords, { icon: customIcon }).addTo(map);
-      
-      marker.on('click', () => {
-        setSelectedHub(hub);
-        map.setView(hub.coords, 5, { animate: true });
-      });
-    });
+      // Force a map redraw to ensure that tiles fit perfectly and don't load in scrambled gray chunks
+      setTimeout(() => {
+        if (map) map.invalidateSize();
+      }, 300);
+
+    } catch (err) {
+      console.error("Leaflet mount failed: ", err);
+    }
 
     return () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
+        try {
+          mapInstanceRef.current.remove();
+        } catch (e) {}
         mapInstanceRef.current = null;
       }
     };
