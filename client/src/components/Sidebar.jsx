@@ -1,13 +1,14 @@
 const ITEMS = [
-  { id: 'dashboard',  icon: '⬡', label: 'HUB'   },
-  { id: 'roadmap',    icon: '◮', label: 'PATH'  },
-  { id: 'subjects',   icon: '◈', label: 'SUB'   },
-  { id: 'flashcards', icon: '⟡', label: 'CARDS' },
-  { id: 'snippets',   icon: '⌨', label: 'CODE'  },
-  { id: 'timer',      icon: '◎', label: 'FOCUS' },
-  { id: 'notes',      icon: '≡', label: 'NOTES' },
-  { id: 'resources',  icon: '📚', label: 'LIB'   },
-  { id: 'ai',         icon: '✦', label: 'AI'    },
+  { id: 'dashboard',    icon: '⬡', label: 'HUB'   },
+  { id: 'roadmap',      icon: '◮', label: 'PATH'  },
+  { id: 'subjects',     icon: '◈', label: 'SUB'   },
+  { id: 'flashcards',   icon: '⟡', label: 'CARDS' },
+  { id: 'snippets',     icon: '⌨', label: 'CODE'  },
+  { id: 'achievements', icon: '🏆', label: 'AWARDS'},
+  { id: 'timer',        icon: '◎', label: 'FOCUS' },
+  { id: 'notes',        icon: '≡', label: 'NOTES' },
+  { id: 'resources',    icon: '📚', label: 'LIB'   },
+  { id: 'ai',           icon: '✦', label: 'AI'    },
 ];
 
 export default function Sidebar({ active, onNav }) {
@@ -16,7 +17,7 @@ export default function Sidebar({ active, onNav }) {
       <div className="logo-mark">NEXUS</div>
       {ITEMS.map((item, i) => (
         <div key={item.id} style={{ display: 'flex', flexDirection: 'column', width: '100%', alignItems: 'center' }}>
-          {(i === 1 || i === 4 || i === 7) && <div className="nav-divider" />}
+          {(i === 1 || i === 5 || i === 8) && <div className="nav-divider" />}
           <button
             className={`nav-item${active === item.id ? ' active' : ''}`}
             onClick={() => onNav(item.id)}

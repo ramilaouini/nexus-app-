@@ -10,6 +10,7 @@ import AIView         from './views/AIView';
 import RoadmapView    from './views/RoadmapView';
 import ResourcesView  from './views/ResourcesView';
 import CodeSnippetsView from './views/CodeSnippetsView';
+import AchievementsView from './views/AchievementsView';
 
 export default function App() {
   const [view, setView]         = useState('dashboard');
@@ -43,6 +44,7 @@ export default function App() {
         {view === 'roadmap'    && <RoadmapView key={viewKey} />}
         {view === 'resources'  && <ResourcesView key={viewKey} />}
         {view === 'snippets'   && <CodeSnippetsView key={viewKey} />}
+        {view === 'achievements'&& <AchievementsView key={viewKey} />}
       </main>
     </div>
   );

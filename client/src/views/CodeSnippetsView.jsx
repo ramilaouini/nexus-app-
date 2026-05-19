@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const SNIPPETS = [
+const INITIAL_SNIPPETS = [
   { id: 1, title: 'C++ Fast I/O', lang: 'cpp', code: 'ios_base::sync_with_stdio(false);\ncin.tie(NULL);', tags: ['C++', 'Competitive Programming'] },
   { id: 2, title: 'React UseEffect Fetch', lang: 'javascript', code: 'useEffect(() => {\n  const fetchData = async () => {\n    const res = await fetch("/api/data");\n    const json = await res.json();\n    setData(json);\n  };\n  fetchData();\n}, []);', tags: ['React', 'JavaScript'] },
   { id: 3, title: 'CSS Glassmorphism', lang: 'css', code: '.glass {\n  background: rgba(255, 255, 255, 0.05);\n  backdrop-filter: blur(10px);\n  border: 1px solid rgba(255, 255, 255, 0.1);\n  border-radius: 16px;\n}', tags: ['CSS', 'Design'] },
@@ -8,7 +8,37 @@ const SNIPPETS = [
 ];
 
 export default function CodeSnippetsView() {
-  const [activeSnippet, setActiveSnippet] = useState(SNIPPETS[0]);
+  const [snippets, setSnippets] = useState(INITIAL_SNIPPETS);
+  const [activeId, setActiveId] = useState(1);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const activeSnippet = snippets.find(s => s.id === activeId) || snippets[0];
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(activeSnippet.code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleNew = () => {
+    const newSnip = { id: Date.now(), title: 'Untitled Snippet', lang: 'javascript', code: '', tags: [] };
+    setSnippets([newSnip, ...snippets]);
+    setActiveId(newSnip.id);
+    setEditForm(newSnip);
+    setIsEditing(true);
+  };
+
+  const handleEdit = () => {
+    setEditForm(activeSnippet);
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    setSnippets(snippets.map(s => s.id === activeId ? editForm : s));
+    setIsEditing(false);
+  };
 
   return (
     <div className="view">
@@ -18,23 +48,24 @@ export default function CodeSnippetsView() {
           <h1 className="page-title">Code Snippets</h1>
           <p className="page-subtitle">Your personal collection of reusable code blocks.</p>
         </div>
-        <button className="btn btn-cyan">+ New Snippet</button>
+        <button className="btn btn-cyan" onClick={handleNew}>+ New Snippet</button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '24px', height: 'calc(100vh - 200px)' }}>
         {/* Sidebar list */}
         <div className="card" style={{ overflowY: 'auto', padding: '12px' }}>
-          {SNIPPETS.map(snip => (
+          {snippets.map(snip => (
             <div 
               key={snip.id}
-              onClick={() => setActiveSnippet(snip)}
+              onClick={() => { setActiveId(snip.id); setIsEditing(false); }}
               style={{
                 padding: '16px',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                background: activeSnippet.id === snip.id ? 'var(--surface)' : 'transparent',
-                border: activeSnippet.id === snip.id ? '1px solid var(--cyan)' : '1px solid transparent',
-                marginBottom: '8px'
+                background: activeId === snip.id ? 'var(--surface)' : 'transparent',
+                border: activeId === snip.id ? '1px solid var(--cyan)' : '1px solid transparent',
+                marginBottom: '8px',
+                transition: 'all 0.2s'
               }}
             >
               <div style={{ fontWeight: 'bold', color: 'var(--text-bright)', marginBottom: '4px' }}>{snip.title}</div>
@@ -45,32 +76,83 @@ export default function CodeSnippetsView() {
 
         {/* Editor area */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '20px', color: 'var(--text-bright)' }}>{activeSnippet.title}</h2>
-            <div className="flex gap-2">
-              {activeSnippet.tags.map(t => <span key={t} className="badge badge-cyan">{t}</span>)}
+          {isEditing ? (
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <input 
+                  className="input" 
+                  value={editForm.title} 
+                  onChange={e => setEditForm({...editForm, title: e.target.value})}
+                  style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}
+                />
+                <div className="flex gap-2">
+                  <input 
+                    className="input" 
+                    placeholder="Language (e.g. cpp, python)" 
+                    value={editForm.lang} 
+                    onChange={e => setEditForm({...editForm, lang: e.target.value})}
+                    style={{ width: '200px' }}
+                  />
+                  <input 
+                    className="input" 
+                    placeholder="Tags (comma separated)" 
+                    value={editForm.tags.join(', ')} 
+                    onChange={e => setEditForm({...editForm, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean)})}
+                  />
+                </div>
+              </div>
+              
+              <textarea 
+                className="input"
+                style={{ 
+                  flex: 1, 
+                  fontFamily: 'var(--font-mono)', 
+                  color: 'var(--green)', 
+                  resize: 'none',
+                  background: '#040b14',
+                  padding: '24px'
+                }}
+                value={editForm.code}
+                onChange={e => setEditForm({...editForm, code: e.target.value})}
+              />
+              
+              <div className="flex justify-end gap-3 mt-4">
+                <button className="btn btn-ghost" onClick={() => setIsEditing(false)}>Cancel</button>
+                <button className="btn btn-cyan" onClick={handleSave}>Save Snippet</button>
+              </div>
             </div>
-          </div>
-          
-          <div style={{ 
-            flex: 1, 
-            background: '#040b14', 
-            borderRadius: '12px', 
-            border: '1px solid var(--border)',
-            padding: '24px',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '14px',
-            color: 'var(--green)',
-            whiteSpace: 'pre-wrap',
-            overflowY: 'auto'
-          }}>
-            {activeSnippet.code}
-          </div>
-          
-          <div className="flex justify-end gap-3 mt-4">
-            <button className="btn btn-ghost">Edit</button>
-            <button className="btn btn-cyan">Copy Code</button>
-          </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2 style={{ fontSize: '20px', color: 'var(--text-bright)' }}>{activeSnippet.title}</h2>
+                <div className="flex gap-2">
+                  {activeSnippet.tags.map(t => <span key={t} className="badge badge-cyan">{t}</span>)}
+                </div>
+              </div>
+              
+              <div style={{ 
+                flex: 1, 
+                background: '#040b14', 
+                borderRadius: '12px', 
+                border: '1px solid var(--border)',
+                padding: '24px',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '14px',
+                color: 'var(--green)',
+                whiteSpace: 'pre-wrap',
+                overflowY: 'auto'
+              }}>
+                {activeSnippet.code}
+              </div>
+              
+              <div className="flex justify-end gap-3 mt-4">
+                <button className="btn btn-ghost" onClick={handleEdit}>Edit</button>
+                <button className={`btn ${copied ? 'btn-purple' : 'btn-cyan'}`} onClick={handleCopy}>
+                  {copied ? '✓ Copied!' : 'Copy Code'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
