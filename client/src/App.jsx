@@ -19,6 +19,9 @@ import QuizView       from './views/QuizView';
 import GoalView       from './views/GoalView';
 import SchedView      from './views/SchedView';
 import NewsView       from './views/NewsView';
+import DuelView       from './views/DuelView';
+import ShipView       from './views/ShipView';
+import MapsView       from './views/MapsView';
 
 export default function App() {
   const [user, setUser]         = useState(() => JSON.parse(localStorage.getItem('nexus_user') || 'null'));
@@ -131,6 +134,9 @@ export default function App() {
           {view === 'goal'       && <GoalView key={viewKey} />}
           {view === 'sched'      && <SchedView key={viewKey} />}
           {view === 'news'       && <NewsView key={viewKey} />}
+          {view === 'duel'       && <DuelView key={viewKey} />}
+          {view === 'ship'       && <ShipView key={viewKey} />}
+          {view === 'maps'       && <MapsView key={viewKey} />}
         </div>
       </main>
     </div>
