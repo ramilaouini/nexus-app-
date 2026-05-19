@@ -1,53 +1,164 @@
 import { useState, useEffect } from 'react';
+import { api } from '../api';
 
-const QUIZ_BANKS = {
+const SUBJECT_BANKS = {
   python: {
-    title: '🐍 Python core',
+    title: '🐍 Python Core',
     questions: [
-      { q: 'What is the output of print(2 ** 3)?', a: ['8', '6', '9', '5'], c: 0, exp: 'The ** operator in Python represents exponentiation (2 cubed is 8).' },
-      { q: 'Which data structure is mutable in Python?', a: ['Tuple', 'List', 'String', 'Integer'], c: 1, exp: 'Lists can be changed after creation (mutable), whereas tuples, strings, and integers are immutable.' },
-      { q: 'How do you define a function in Python?', a: ['function myFunc()', 'def myFunc():', 'void myFunc()', 'func myFunc()'], c: 1, exp: 'The "def" keyword followed by a colon is used to define functions in Python.' },
-      { q: 'What does the len() function do?', a: ['Finds maximum value', 'Returns length/item count', 'Deletes items', 'Generates numbers'], c: 1, exp: 'len() returns the number of items in a collection or length of a string.' }
+      { q: 'What is the output of print(2 ** 3)?', a: ['8', '6', '9', '5'], c: 0, exp: 'The ** operator represents exponentiation.' },
+      { q: 'Which data structure is mutable in Python?', a: ['Tuple', 'List', 'String', 'Integer'], c: 1, exp: 'Lists can be altered after creation (mutable).' },
+      { q: 'How do you define a function in Python?', a: ['function myFunc()', 'def myFunc():', 'void myFunc()', 'func myFunc()'], c: 1, exp: 'The "def" keyword is used to declare functions.' },
+      { q: 'What does the len() function do?', a: ['Finds max', 'Returns length/item count', 'Deletes items', 'Generates numbers'], c: 1, exp: 'len() returns the number of items in a collection.' }
     ]
   },
   cpp: {
     title: '⚙️ C++ Programming',
     questions: [
-      { q: 'Which operator is used to access memory address of a variable?', a: ['*', '&', '->', '&&'], c: 1, exp: 'The reference operator (&) returns the memory address of a variable.' },
-      { q: 'What is a pointer in C++?', a: ['A loop counter', 'A variable storing memory address', 'A compiler flag', 'An array index'], c: 1, exp: 'A pointer variable stores the memory address of another variable.' },
-      { q: 'How do you print output to standard console in C++?', a: ['cout << "Hello";', 'print("Hello");', 'System.out.println("Hello");', 'printf("Hello");'], c: 0, exp: 'std::cout along with stream insertion operator (<<) is used to output text.' },
-      { q: 'What is dynamic memory allocation operator?', a: ['malloc', 'new', 'alloc', 'create'], c: 1, exp: 'The "new" operator dynamically allocates memory on the heap in C++.' }
+      { q: 'Which operator is used to access memory address of a variable?', a: ['*', '&', '->', '&&'], c: 1, exp: 'The reference operator (&) returns the memory address.' },
+      { q: 'What is a pointer in C++?', a: ['A loop counter', 'A variable storing memory address', 'A compiler flag', 'An array index'], c: 1, exp: 'A pointer stores the memory address of another variable.' },
+      { q: 'How do you output text to standard console in C++?', a: ['cout << "Hello";', 'print("Hello");', 'System.out.println("Hello");', 'printf("Hello");'], c: 0, exp: 'std::cout along with stream insertion is standard in C++.' }
     ]
   },
   javascript: {
     title: '⚡ JavaScript Engine',
     questions: [
-      { q: 'Which keyword defines a block-scoped local variable in ES6?', a: ['var', 'let', 'global', 'local'], c: 1, exp: 'The "let" keyword declares a block-scoped local variable in modern JS.' },
-      { q: 'What is the result of typeof NaN?', a: ['"number"', '"undefined"', '"null"', '"nan"'], c: 0, exp: 'Despite standing for Not-a-Number, NaN mathematically belongs to the Number type in JavaScript.' },
-      { q: 'What does === operator do?', a: ['Assignment', 'Equality with type conversion', 'Strict equality without type conversion', 'Bitwise comparison'], c: 2, exp: 'The triple-equal operator compares both value and type for strict equality.' },
-      { q: 'How do you create a promise?', a: ['new Promise()', 'Promise.create()', 'make Promise()', 'async Promise()'], c: 0, exp: 'Promises are instantiated using "new Promise((resolve, reject) => { })".' }
+      { q: 'Which keyword defines a block-scoped local variable in ES6?', a: ['var', 'let', 'global', 'local'], c: 1, exp: 'The "let" keyword declares block-scoped variables.' },
+      { q: 'What is the result of typeof NaN?', a: ['"number"', '"undefined"', '"null"', '"nan"'], c: 0, exp: 'NaN belongs to the Number type mathematically in JS.' }
     ]
   },
   react: {
-    title: '⚛️ React SPA Framework',
+    title: '⚛️ React SPA',
     questions: [
-      { q: 'Which hook manages state inside React functional components?', a: ['useEffect', 'useMemo', 'useState', 'useRef'], c: 2, exp: 'useState allows adding local state variables to functional components.' },
-      { q: 'What is Virtual DOM?', a: ['A direct replica of standard DOM', 'Lightweight memory representation of real DOM', 'An external database', 'A visual layout inspector'], c: 1, exp: 'React keeps a lightweight virtual representation of the real DOM in memory to perform rapid updates.' },
-      { q: 'What is the purpose of useEffect?', a: ['To style elements', 'To execute side-effects', 'To create context grids', 'To build buttons'], c: 1, exp: 'useEffect runs side-effects like fetching data, subscriptions, or updating DOM.' },
-      { q: 'How do you pass data down to child components?', a: ['State hooks', 'Props', 'Redux', 'Context API'], c: 1, exp: 'Props (properties) are passed from parent components down to child components.' }
+      { q: 'Which hook manages state inside functional components?', a: ['useEffect', 'useMemo', 'useState', 'useRef'], c: 2, exp: 'useState allows state handling inside components.' },
+      { q: 'What is Virtual DOM?', a: ['A replica', 'Lightweight memory representation of real DOM', 'An external database', 'A grid'], c: 1, exp: 'React keeps a lightweight virtual representation of real DOM in memory.' }
+    ]
+  },
+  html: {
+    title: '🌐 HTML5 Layouts',
+    questions: [
+      { q: 'Which element represents the main content of a document?', a: ['<section>', '<article>', '<main>', '<div>'], c: 2, exp: '<main> defines the dominant content of the document body.' },
+      { q: 'What is the correct HTML element for playing audio files?', a: ['<sound>', '<audio>', '<music>', '<play>'], c: 1, exp: 'The standard HTML5 element for audio is <audio>.' }
+    ]
+  },
+  css: {
+    title: '🎨 CSS3 Grid & Flex',
+    questions: [
+      { q: 'How do you make an element a flex container?', a: ['display: flex;', 'layout: flex;', 'display: grid;', 'float: left;'], c: 0, exp: '"display: flex;" initiates flexbox context.' },
+      { q: 'Which CSS property controls text size?', a: ['font-style', 'text-size', 'font-size', 'text-style'], c: 2, exp: '"font-size" controls the visual size of fonts.' }
+    ]
+  },
+  sql: {
+    title: '🗄️ SQL Databases',
+    questions: [
+      { q: 'Which SQL statement selects data from a database?', a: ['GET', 'OPEN', 'SELECT', 'EXTRACT'], c: 2, exp: 'SELECT is used to retrieve data rows.' },
+      { q: 'How do you filter rows in SQL?', a: ['WHERE', 'HAVING', 'GROUP BY', 'ORDER BY'], c: 0, exp: 'The WHERE clause filters rows based on a condition.' }
+    ]
+  },
+  rust: {
+    title: '🦀 Rust Compiler',
+    questions: [
+      { q: 'What is Rust’s primary memory management model?', a: ['Garbage Collection', 'Manual malloc/free', 'Ownership & Borrowing', 'Reference counting only'], c: 2, exp: 'Rust uses ownership checks at compile-time to guarantee memory safety.' },
+      { q: 'Which keyword defines an immutable variable in Rust by default?', a: ['let', 'mut let', 'const mut', 'static'], c: 0, exp: 'Variables declared with "let" are immutable by default.' }
+    ]
+  },
+  docker: {
+    title: '🐳 Docker Containers',
+    questions: [
+      { q: 'Which command builds an image from a Dockerfile?', a: ['docker run', 'docker build', 'docker compose', 'docker image'], c: 1, exp: 'docker build compiles the instructions inside a Dockerfile.' },
+      { q: 'What is a Docker container?', a: ['A lightweight virtualization package', 'A virtual machine', 'A compiler', 'A script'], c: 0, exp: 'Containers package application code and dependencies together.' }
+    ]
+  },
+  git: {
+    title: '🌿 Git Versioning',
+    questions: [
+      { q: 'Which command shows the working directory file status?', a: ['git log', 'git status', 'git check', 'git diff'], c: 1, exp: 'git status shows modified and staged files.' },
+      { q: 'How do you download branches from remote repository?', a: ['git push', 'git download', 'git fetch', 'git copy'], c: 2, exp: 'git fetch downloads commits and files from remote repositories.' }
+    ]
+  },
+  linux: {
+    title: '🐧 Linux Core',
+    questions: [
+      { q: 'Which command prints the working directory path?', a: ['dir', 'pwd', 'cd', 'ls'], c: 1, exp: 'pwd stands for Print Working Directory.' },
+      { q: 'How do you create a new directory?', a: ['mkdir', 'rmdir', 'touch', 'newdir'], c: 0, exp: 'mkdir creates a folder directory.' }
+    ]
+  },
+  typescript: {
+    title: '📘 TypeScript Static',
+    questions: [
+      { q: 'Which file configures TypeScript options?', a: ['package.json', 'tsconfig.json', 'tsconfig.js', 'webpack.config.js'], c: 1, exp: 'tsconfig.json specifies compiler options.' },
+      { q: 'What does "unknown" type represent?', a: ['A type-safe equivalent of any', 'An undefined type', 'A type representing null', 'A generic'], c: 0, exp: '"unknown" is type-safe and forces type checks before operations.' }
+    ]
+  },
+  algorithms: {
+    title: '⚙️ Algorithms CS',
+    questions: [
+      { q: 'What is the average time complexity of QuickSort?', a: ['O(N log N)', 'O(N^2)', 'O(log N)', 'O(N)'], c: 0, exp: 'QuickSort runs at O(N log N) on average.' },
+      { q: 'Which data structure follows First-In-First-Out (FIFO)?', a: ['Stack', 'Queue', 'Binary Tree', 'Heap'], c: 1, exp: 'Queues process items in a first-in-first-out manner.' }
+    ]
+  },
+  java: {
+    title: '☕ Java Enterprise',
+    questions: [
+      { q: 'What is JVM?', a: ['Java Virtual Machine', 'Java Visual Mode', 'Java Version Manager', 'Java Vector Model'], c: 0, exp: 'JVM executes compiled Java bytecode.' },
+      { q: 'Which keyword inherits a class in Java?', a: ['implements', 'extends', 'inherits', 'extends class'], c: 1, exp: 'The "extends" keyword implements class inheritance.' }
+    ]
+  },
+  csharp: {
+    title: '🎯 C# & .NET',
+    questions: [
+      { q: 'What compiles C# code to native bytecode?', a: ['CLR', 'Roslyn', 'JIT', 'CLI'], c: 1, exp: 'Roslyn is the official open-source compiler for C#.' },
+      { q: 'Which type represents a value type in C#?', a: ['class', 'struct', 'interface', 'delegate'], c: 1, exp: 'structs are value types stored on the stack.' }
+    ]
+  },
+  security: {
+    title: '🛡️ Cyber Security',
+    questions: [
+      { q: 'What is SQL Injection?', a: ['Injecting custom SQL queries to input fields', 'A virus', 'A network sweep', 'A firewall rule'], c: 0, exp: 'SQLi manipulates backend databases via input payloads.' },
+      { q: 'Which hash function is historically insecure?', a: ['SHA-256', 'MD5', 'bcrypt', 'Argon2'], c: 1, exp: 'MD5 is highly vulnerable to hash collision attacks.' }
+    ]
+  },
+  networking: {
+    title: '🔌 Web Protocols',
+    questions: [
+      { q: 'What does DNS stand for?', a: ['Domain Name System', 'Dynamic Net Standard', 'Data Network Suite', 'Domain Node Standard'], c: 0, exp: 'DNS translates readable domain names to IP addresses.' },
+      { q: 'Which layer of OSI model does IP address reside?', a: ['Network Layer', 'Transport Layer', 'Data Link Layer', 'Physical Layer'], c: 0, exp: 'The Network Layer handles IP addressing and routing.' }
+    ]
+  },
+  rust_advanced: {
+    title: '🦀 Rust Memory',
+    questions: [
+      { q: 'What smart pointer provides reference counting?', a: ['Box', 'Rc', 'RefCell', 'Mutex'], c: 1, exp: 'Rc<T> enables multiple ownership by counting references.' },
+      { q: 'Which block compiles unsafe operations?', a: ['unsafe { }', 'bypass { }', 'extern { }', 'direct { }'], c: 0, exp: 'The unsafe block allows pointers dereference and raw operations.' }
+    ]
+  },
+  php: {
+    title: '🐘 PHP Backend',
+    questions: [
+      { q: 'How do you represent variables in PHP?', a: ['var', '$var', 'let var', 'variable'], c: 1, exp: 'All variables in PHP are prefixed with a dollar sign ($).' },
+      { q: 'What superglobal array holds form POST values?', a: ['$_POST', '$POST', '$_GET', '$_SERVER'], c: 0, exp: '$_POST collects form inputs submitted via HTTP POST.' }
+    ]
+  },
+  mongodb: {
+    title: '🍃 NoSQL MongoDB',
+    questions: [
+      { q: 'What format does MongoDB store document records?', a: ['XML', 'JSON/BSON', 'CSV', 'YAML'], c: 1, exp: 'MongoDB stores records as binary JSON (BSON).' },
+      { q: 'Which command inserts a document?', a: ['insertOne()', 'add()', 'create()', 'push()'], c: 0, exp: 'insertOne() inserts a single BSON document.' }
     ]
   }
 };
 
 export default function QuizView() {
-  const [bankKey, setBankKey] = useState(null); // null | 'python' | 'cpp' | ...
+  const [bankKey, setBankKey] = useState(null);
   const [qIdx, setQIdx] = useState(0);
+  const [questionsList, setQuestionsList] = useState([]);
   const [selectedOpt, setSelectedOpt] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
   const [coinsEarned, setCoinsEarned] = useState(0);
   const [quizDone, setQuizDone] = useState(false);
+  const [loadingAI, setLoadingAI] = useState(false);
 
+  // Initialize and randomize/shuffle questions on start
   const startQuiz = (key) => {
     setBankKey(key);
     setQIdx(0);
@@ -56,6 +167,54 @@ export default function QuizView() {
     setScore(0);
     setCoinsEarned(0);
     setQuizDone(false);
+
+    // Dynamic Random Shuffling of standard questions
+    const bank = SUBJECT_BANKS[key];
+    const shuffled = [...bank.questions]
+      .sort(() => Math.random() - 0.5)
+      .map(q => {
+        // Also shuffle options randomly!
+        const correctOptText = q.a[q.c];
+        const shuffledOpts = [...q.a].sort(() => Math.random() - 0.5);
+        const nextCorrectIdx = shuffledOpts.indexOf(correctOptText);
+        return {
+          q: q.q,
+          a: shuffledOpts,
+          c: nextCorrectIdx,
+          exp: q.exp
+        };
+      });
+    setQuestionsList(shuffled);
+  };
+
+  // dynamic real-time AI generation on prompt request!
+  const generateAIQuestion = async (topic) => {
+    setLoadingAI(true);
+    setSubmitted(false);
+    setSelectedOpt(null);
+    try {
+      const prompt = `Generate a single challenging, highly technical multiple choice question about ${topic}. 
+Return ONLY a valid stringified JSON object matching this TypeScript interface (DO NOT output any backticks, markdown markers, no comments, or text outside the JSON):
+{
+  "q": "the question string",
+  "a": ["option 0", "option 1", "option 2", "option 3"],
+  "c": 2, // integer index of correct option (0 to 3)
+  "exp": "clear explanation string"
+}`;
+      const res = await api.ai.chat([{ role: 'user', content: prompt }]);
+      const cleanJson = res.response.replace(/```json|```/gi, '').trim();
+      const parsed = JSON.parse(cleanJson);
+      
+      setQuestionsList([parsed]);
+      setBankKey(topic);
+      setQIdx(0);
+      setQuizDone(false);
+    } catch(err) {
+      console.error(err);
+      alert("AI generator offline or payload error. Loading standard deck.");
+      startQuiz('python');
+    }
+    setLoadingAI(false);
   };
 
   const selectOption = (idx) => {
@@ -66,20 +225,17 @@ export default function QuizView() {
   const submitAnswer = () => {
     if (selectedOpt === null || submitted) return;
     setSubmitted(true);
-    const bank = QUIZ_BANKS[bankKey];
-    const q = bank.questions[qIdx];
+    const q = questionsList[qIdx];
     if (selectedOpt === q.c) {
       setScore(s => s + 1);
-      setCoinsEarned(c => c + 20); // 20 ByteCoins per correct answer!
-      // Add to persistent balance
+      setCoinsEarned(c => c + 30); // 30 Coins for dynamic/randomized answers!
       const currentCoins = Number(localStorage.getItem('nexus_coins') || '0');
-      localStorage.setItem('nexus_coins', (currentCoins + 20).toString());
+      localStorage.setItem('nexus_coins', (currentCoins + 30).toString());
     }
   };
 
   const nextQuestion = () => {
-    const bank = QUIZ_BANKS[bankKey];
-    if (qIdx + 1 < bank.questions.length) {
+    if (qIdx + 1 < questionsList.length) {
       setQIdx(qIdx + 1);
       setSelectedOpt(null);
       setSubmitted(false);
@@ -92,54 +248,80 @@ export default function QuizView() {
     <div className="view" style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
       <div className="page-header" style={{ flexShrink: 0 }}>
         <div className="page-eyebrow">Knowledge OS · Revision</div>
-        <h1 className="page-title">📝 revision Quizzes</h1>
-        <p className="page-subtitle">Master core engineering concepts, test your memory, and earn reward ByteCoins!</p>
+        <h1 className="page-title">📝 Revision Quizzes</h1>
+        <p className="page-subtitle">Revise with 20 massive randomized subject decks or summon real-time AI generated questions!</p>
       </div>
 
-      <div style={{ flex: 1, marginTop: 24, display: 'flex', justifyContent: 'center' }}>
+      <div style={{ flex: 1, marginTop: 24, display: 'flex', justifyContent: 'center', paddingBottom: 40 }}>
         {bankKey === null ? (
-          /* Selection Screen */
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24, maxWidth: 900, width: '100%', padding: 10 }}>
-            {Object.entries(QUIZ_BANKS).map(([key, value]) => (
-              <div 
-                key={key} 
-                className="card clickable" 
-                style={{ padding: 30, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, border: '1px solid var(--border-hi)', background: 'linear-gradient(135deg, var(--cyan-dim), var(--purple-dim))' }}
-                onClick={() => startQuiz(key)}
-              >
-                <div style={{ fontSize: 44 }}>{value.title.split(' ')[0]}</div>
-                <h3 style={{ color: 'var(--text-bright)', fontSize: 18, fontWeight: 800 }}>{value.title}</h3>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{value.questions.length} Revision Steps</span>
-                <button className="btn btn-cyan" style={{ width: '100%', marginTop: 'auto', fontSize: 12 }}>Start Revision</button>
+          /* Subject Selector */
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 950, width: '100%' }}>
+            
+            {/* AI Generator quick launch */}
+            <div className="card" style={{ padding: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg, rgba(168,85,247,0.1), rgba(0,229,255,0.1))', border: '1px solid var(--border-hi)' }}>
+              <div>
+                <h3 style={{ color: 'var(--text-bright)', fontSize: 18, fontWeight: 800 }}>🤖 Dynamic AI Question Summoner</h3>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Summon a real-time, randomly generated AI multiple-choice question on any programming topic!</span>
               </div>
-            ))}
+              <button 
+                className="btn btn-purple" 
+                disabled={loadingAI}
+                onClick={() => generateAIQuestion(prompt("Enter any engineering topic (e.g. C++ Pointers, React Hooks, Docker Volumes):") || 'React')}
+              >
+                {loadingAI ? 'Generating...' : 'Summon AI Question'}
+              </button>
+            </div>
+
+            <div style={{ fontSize: 12, fontWeight: 'bold', color: 'var(--cyan)', letterSpacing: 1 }}>20 CS SUBJECT DECKS (RANDOMIZED QUESTIONS)</div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 20 }}>
+              {Object.entries(SUBJECT_BANKS).map(([key, value]) => (
+                <div 
+                  key={key} 
+                  className="card clickable" 
+                  style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 12, border: '1px solid var(--border)' }}
+                  onClick={() => startQuiz(key)}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 24 }}>{value.title.split(' ')[0]}</span>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>RANDOMIZED</span>
+                  </div>
+                  <h3 style={{ color: 'var(--text-bright)', fontSize: 15, fontWeight: 800, margin: 0 }}>{value.title}</h3>
+                  <button className="btn btn-ghost" style={{ width: '100%', fontSize: 11, padding: '6px', marginTop: 'auto' }}>Revise Deck</button>
+                </div>
+              ))}
+            </div>
+
           </div>
         ) : (
-          /* Active Quiz Dashboard */
+          /* Active Question Frame */
           <div className="card" style={{ maxWidth: 600, width: '100%', padding: 30, display: 'flex', flexDirection: 'column', gap: 20 }}>
             
-            {/* Header progress info */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>
               <button className="btn btn-ghost" onClick={() => setBankKey(null)} style={{ fontSize: 12 }}>← Quit</button>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--text-muted)' }}>
-                Progress: {qIdx + 1} / {QUIZ_BANKS[bankKey].questions.length}
+                Progress: {qIdx + 1} / {questionsList.length}
               </div>
             </div>
 
-            {!quizDone ? (
-              /* Question Step */
+            {loadingAI ? (
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <div className="spinner" style={{ margin: '0 auto 20px', width: 40, height: 40 }} />
+                <span style={{ color: 'var(--text-muted)' }}>AI Co-Pilot generating dynamic question...</span>
+              </div>
+            ) : !quizDone ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 
                 {/* Question */}
-                <h2 style={{ color: 'var(--text-bright)', fontSize: 20, fontWeight: 800, lineHeight: 1.4 }}>
-                  {QUIZ_BANKS[bankKey].questions[qIdx].q}
+                <h2 style={{ color: 'var(--text-bright)', fontSize: 19, fontWeight: 800, lineHeight: 1.4 }}>
+                  {questionsList[qIdx]?.q}
                 </h2>
 
-                {/* Options List */}
+                {/* Options */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {QUIZ_BANKS[bankKey].questions[qIdx].a.map((opt, idx) => {
+                  {questionsList[qIdx]?.a.map((opt, idx) => {
                     const isSelected = selectedOpt === idx;
-                    const isCorrect = idx === QUIZ_BANKS[bankKey].questions[qIdx].c;
+                    const isCorrect = idx === questionsList[qIdx].c;
                     
                     let bg = 'var(--surface)';
                     let border = '1px solid var(--border)';
@@ -179,38 +361,37 @@ export default function QuizView() {
                   })}
                 </div>
 
-                {/* Explanation Context */}
+                {/* Explanation */}
                 {submitted && (
                   <div style={{
                     padding: 16, background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)',
                     borderRadius: 12, fontSize: 13, lineHeight: 1.5, color: 'var(--text)'
                   }}>
-                    💡 <strong>Insight:</strong> {QUIZ_BANKS[bankKey].questions[qIdx].exp}
+                    💡 <strong>Insight:</strong> {questionsList[qIdx].exp}
                   </div>
                 )}
 
-                {/* Control Action Buttons */}
+                {/* Controls */}
                 {!submitted ? (
                   <button className="btn btn-cyan" onClick={submitAnswer} disabled={selectedOpt === null} style={{ width: '100%', padding: 12 }}>
                     Submit Answer
                   </button>
                 ) : (
                   <button className="btn btn-purple" onClick={nextQuestion} style={{ width: '100%', padding: 12 }}>
-                    {qIdx + 1 < QUIZ_BANKS[bankKey].questions.length ? 'Next Question →' : 'Complete Quiz'}
+                    {qIdx + 1 < questionsList.length ? 'Next Question →' : 'Complete Quiz'}
                   </button>
                 )}
 
               </div>
             ) : (
-              /* Quiz Completion Scorecard */
+              /* Finish Screen */
               <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 20, padding: '20px 0' }}>
                 <div style={{ fontSize: 60 }}>🏆</div>
-                <h2 style={{ color: 'var(--text-bright)', fontSize: 24, fontWeight: 900 }}>Revision Finished!</h2>
+                <h2 style={{ color: 'var(--text-bright)', fontSize: 24, fontWeight: 900 }}>Revision Complete!</h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: 15 }}>
-                  You answered {score} out of {QUIZ_BANKS[bankKey].questions.length} questions correctly.
+                  You scored {score} / {questionsList.length} correct answers.
                 </p>
 
-                {/* Coins feedback */}
                 <div style={{ 
                   background: 'linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,140,0,0.1))',
                   border: '1px solid rgba(255,215,0,0.3)', padding: '16px 24px', borderRadius: 16,
@@ -219,12 +400,12 @@ export default function QuizView() {
                   <span style={{ fontSize: 32 }}>🪙</span>
                   <div style={{ textAlign: 'left' }}>
                     <div style={{ fontSize: 18, fontWeight: 'bold', color: 'var(--yellow)' }}>+{coinsEarned} Coins</div>
-                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Added to your wallet!</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Earned dynamically!</span>
                   </div>
                 </div>
 
                 <button className="btn btn-purple" onClick={() => setBankKey(null)} style={{ marginTop: 10 }}>
-                  Back to Subject Selection
+                  Back to Revision Decks
                 </button>
               </div>
             )}
