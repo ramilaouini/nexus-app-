@@ -21,11 +21,12 @@ function useCountUp(target, duration = 1200) {
 const COLORS = ['#00e5ff', '#a855f7', '#ff7043', '#00e676', '#ffd740', '#40c4ff'];
 
 const CITIES = [
-  { name: 'Tunisia (Tunis)', lat: 36.8065, lon: 10.1815, flag: '🇹🇳' },
-  { name: 'France (Paris)', lat: 48.8566, lon: 2.3522, flag: '🇫🇷' },
-  { name: 'Japan (Tokyo)', lat: 35.6762, lon: 139.6503, flag: '🇯🇵' },
-  { name: 'USA (New York)', lat: 40.7128, lon: -74.0060, flag: '🇺🇸' },
-  { name: 'UK (London)', lat: 51.5074, lon: -0.1278, flag: '🇬🇧' }
+  { name: 'Tunisia (Tunis)', lat: 36.8065, lon: 10.1815, flag: '🇹🇳', timezone: 'Africa/Tunis' },
+  { name: 'Czech Republic (Prague)', lat: 50.0755, lon: 14.4378, flag: '🇨🇿', timezone: 'Europe/Prague' },
+  { name: 'France (Paris)', lat: 48.8566, lon: 2.3522, flag: '🇫🇷', timezone: 'Europe/Paris' },
+  { name: 'Japan (Tokyo)', lat: 35.6762, lon: 139.6503, flag: '🇯🇵', timezone: 'Asia/Tokyo' },
+  { name: 'USA (New York)', lat: 40.7128, lon: -74.0060, flag: '🇺🇸', timezone: 'America/New_York' },
+  { name: 'UK (London)', lat: 51.5074, lon: -0.1278, flag: '🇬🇧', timezone: 'Europe/London' }
 ];
 
 const t = {
@@ -166,6 +167,7 @@ export default function Dashboard({ onNav, lang = 'en' }) {
   };
 
   const scene = getWeatherScene(weather?.weathercode);
+  const currentCity = CITIES[selectedCityIdx];
 
   return (
     <div className="view" style={{ overflowY: 'auto', paddingBottom: 60, paddingRight: 10 }}>
@@ -219,21 +221,21 @@ export default function Dashboard({ onNav, lang = 'en' }) {
         </div>
       </div>
 
-      {/* LIVE DATA SECTION (Weather, Time, Translation indicators) */}
+      {/* LIVE DATA SECTION (Weather, Time) */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 30 }}>
-        {/* Dynamic Real-time Date and Time */}
+        {/* Dynamic Real-time Date and Time (Synced to Selected Country Timezone!) */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '24px 30px', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: -30, right: -30, fontSize: 100, opacity: 0.05 }}>🕒</div>
-          <div style={{ fontSize: 12, color: 'var(--cyan)', fontWeight: 'bold', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>{t[lang].time}</div>
+          <div style={{ fontSize: 12, color: 'var(--cyan)', fontWeight: 'bold', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 }}>{t[lang].time} ({currentCity.flag} {currentCity.name.split(' ')[0]})</div>
           <div style={{ fontSize: 48, fontWeight: 900, color: 'var(--text-bright)', fontFamily: 'var(--font-mono)' }}>
-            {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: currentCity.timezone })}
           </div>
           <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4 }}>
-            {time.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            {time.toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: currentCity.timezone })}
           </div>
         </div>
 
-        {/* Real-time Weather in Tunisia / Other Countries */}
+        {/* Real-time Weather with Country selector */}
         <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 30px', position: 'relative', overflow: 'hidden' }}>
           
           <div style={{ zIndex: 2 }}>
@@ -244,7 +246,7 @@ export default function Dashboard({ onNav, lang = 'en' }) {
               value={selectedCityIdx} 
               onChange={e => setSelectedCityIdx(Number(e.target.value))} 
               className="input" 
-              style={{ width: 180, padding: '4px 8px', fontSize: 13, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-bright)', marginBottom: 12 }}
+              style={{ width: 220, padding: '4px 8px', fontSize: 13, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-bright)', marginBottom: 12 }}
             >
               {CITIES.map((c, i) => (
                 <option key={c.name} value={i}>{c.flag} {c.name}</option>
