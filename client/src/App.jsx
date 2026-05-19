@@ -16,6 +16,9 @@ import ProfileView    from './views/ProfileView';
 import CreditsView    from './views/CreditsView';
 import ChillZoneView  from './views/ChillZoneView';
 import QuizView       from './views/QuizView';
+import GoalView       from './views/GoalView';
+import SchedView      from './views/SchedView';
+import NewsView       from './views/NewsView';
 
 export default function App() {
   const [user, setUser]         = useState(() => JSON.parse(localStorage.getItem('nexus_user') || 'null'));
@@ -125,6 +128,9 @@ export default function App() {
           {view === 'credits'    && <CreditsView key={viewKey} />}
           {view === 'chill'      && <ChillZoneView key={viewKey} />}
           {view === 'quiz'       && <QuizView key={viewKey} />}
+          {view === 'goal'       && <GoalView key={viewKey} />}
+          {view === 'sched'      && <SchedView key={viewKey} />}
+          {view === 'news'       && <NewsView key={viewKey} />}
         </div>
       </main>
     </div>
