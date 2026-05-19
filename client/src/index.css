@@ -28,36 +28,36 @@
 }
 
 .light-theme {
-  --bg:          #f8fafc;
-  --surface:     #ffffff;
-  --card:        rgba(255, 255, 255, 0.7);
-  --card2:       #f1f5f9;
-  --cyan:        #3b82f6;
-  --cyan-dim:    rgba(59,130,246,0.1);
-  --cyan-glow:   rgba(59,130,246,0.2);
-  --purple:      #8b5cf6;
-  --purple-dim:  rgba(139,92,246,0.1);
+  --bg:          #f5eefb;
+  --surface:     #fcfaff;
+  --card:        rgba(255, 255, 255, 0.45);
+  --card2:       #efe4fc;
+  --cyan:        #a855f7;
+  --cyan-dim:    rgba(168,85,247,0.08);
+  --cyan-glow:   rgba(168,85,247,0.15);
+  --purple:      #2563eb;
+  --purple-dim:  rgba(37,99,235,0.08);
   --orange:      #f97316;
-  --green:       #10b981;
-  --yellow:      #f59e0b;
-  --border:      rgba(15,23,42,0.08);
-  --border-md:   rgba(15,23,42,0.12);
-  --border-hi:   rgba(15,23,42,0.18);
-  --text:        #334155;
-  --text-bright: #0f172a;
-  --text-muted:  #64748b;
+  --green:       #16a34a;
+  --yellow:      #ca8a04;
+  --border:      rgba(168,85,247,0.1);
+  --border-md:   rgba(168,85,247,0.15);
+  --border-hi:   rgba(168,85,247,0.22);
+  --text:        #5c4d70;
+  --text-bright: #2d1b40;
+  --text-muted:  #9581ad;
 }
 
 .light-theme .grid-overlay::after {
   background:
-    radial-gradient(ellipse at 15% 60%, rgba(59,130,246,0.04) 0%, transparent 55%),
-    radial-gradient(ellipse at 85% 20%, rgba(139,92,246,0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 100%, rgba(248,250,252,0.95) 0%, transparent 80%) !important;
+    radial-gradient(ellipse at 15% 60%, rgba(255,182,193,0.25) 0%, transparent 60%),
+    radial-gradient(ellipse at 85% 20%, rgba(255,218,185,0.25) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(245,238,251,0.92) 0%, transparent 80%) !important;
 }
 
 .light-theme .sidebar {
-  background: #ffffff !important;
-  box-shadow: 2px 0 20px rgba(15,23,42,0.03) !important;
+  background: #fbf7ff !important;
+  box-shadow: 2px 0 20px rgba(92,77,112,0.04) !important;
 }
 
 .light-theme .sidebar::after {
@@ -65,60 +65,60 @@
 }
 
 .light-theme .nav-item {
-  color: #64748b !important;
+  color: #9581ad !important;
 }
 
 .light-theme .nav-item.active {
-  background: rgba(59,130,246,0.08) !important;
-  color: #3b82f6 !important;
-  border-color: rgba(59,130,246,0.15) !important;
+  background: rgba(168,85,247,0.08) !important;
+  color: #a855f7 !important;
+  border-color: rgba(168,85,247,0.15) !important;
 }
 
 .light-theme .card {
-  background: rgba(255, 255, 255, 0.75) !important;
+  background: rgba(255, 255, 255, 0.45) !important;
   backdrop-filter: blur(24px) !important;
-  box-shadow: 0 10px 40px rgba(15,23,42,0.03) !important;
-  border: 1px solid rgba(15,23,42,0.05) !important;
+  box-shadow: 0 10px 40px rgba(92,77,112,0.03) !important;
+  border: 1px solid rgba(168,85,247,0.08) !important;
 }
 
 .light-theme input, .light-theme select, .light-theme textarea {
-  background: #f1f5f9 !important;
-  color: #0f172a !important;
-  border: 1px solid rgba(15,23,42,0.1) !important;
+  background: #fdfbff !important;
+  color: #2d1b40 !important;
+  border: 1px solid rgba(168,85,247,0.15) !important;
 }
 
 .light-theme input:focus, .light-theme select:focus {
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 2px rgba(59,130,246,0.1) !important;
+  border-color: #a855f7 !important;
+  box-shadow: 0 0 0 2px rgba(168,85,247,0.1) !important;
 }
 
 .light-theme .activity-item {
-  background: #f8fafc !important;
-  border: 1px solid rgba(15,23,42,0.03) !important;
+  background: rgba(255, 255, 255, 0.3) !important;
+  border: 1px solid rgba(168,85,247,0.05) !important;
 }
 
 .light-theme .btn-ghost {
-  color: #475569 !important;
+  color: #5c4d70 !important;
 }
 
 .light-theme .btn-ghost:hover {
-  background: rgba(15,23,42,0.04) !important;
+  background: rgba(168,85,247,0.05) !important;
 }
 
 .light-theme .modal {
-  background: #ffffff !important;
-  box-shadow: 0 20px 50px rgba(15,23,42,0.1) !important;
-  border: 1px solid rgba(15,23,42,0.08) !important;
+  background: #fcfaff !important;
+  box-shadow: 0 20px 50px rgba(92,77,112,0.08) !important;
+  border: 1px solid rgba(168,85,247,0.12) !important;
 }
 
 .light-theme .fc-face {
   background: #ffffff !important;
-  border: 1px solid rgba(15,23,42,0.08) !important;
-  box-shadow: 0 10px 30px rgba(15,23,42,0.02) !important;
+  border: 1px solid rgba(168,85,247,0.1) !important;
+  box-shadow: 0 10px 30px rgba(92,77,112,0.02) !important;
 }
 
 .light-theme .fc-text {
-  color: #0f172a !important;
+  color: #2d1b40 !important;
 }
 
 html, body, #root { height: 100%; }
