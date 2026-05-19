@@ -13,6 +13,7 @@ import CodeSnippetsView from './views/CodeSnippetsView';
 import AchievementsView from './views/AchievementsView';
 import LoginView      from './views/LoginView';
 import ProfileView    from './views/ProfileView';
+import CreditsView    from './views/CreditsView';
 
 export default function App() {
   const [user, setUser]         = useState(() => JSON.parse(localStorage.getItem('nexus_user') || 'null'));
@@ -56,6 +57,7 @@ export default function App() {
         {view === 'snippets'   && <CodeSnippetsView key={viewKey} user={user} />}
         {view === 'achievements'&& <AchievementsView key={viewKey} user={user} />}
         {view === 'profile'    && <ProfileView key={viewKey} user={user} setUser={setUser} />}
+        {view === 'credits'    && <CreditsView key={viewKey} />}
       </main>
     </div>
   );
