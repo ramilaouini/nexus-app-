@@ -32,6 +32,32 @@ export default function App() {
     setUser(u);
   };
 
+  useEffect(() => {
+    const activeTheme = localStorage.getItem('active_theme') || 'default';
+    const root = document.documentElement;
+    if (activeTheme === 'synthwave') {
+      root.style.setProperty('--cyan', '#ff007f');
+      root.style.setProperty('--purple', '#9d00ff');
+      root.style.setProperty('--background', '#0b001a');
+      root.style.setProperty('--surface', '#13002b');
+    } else if (activeTheme === 'forest') {
+      root.style.setProperty('--cyan', '#2ecc71');
+      root.style.setProperty('--purple', '#27ae60');
+      root.style.setProperty('--background', '#0a140f');
+      root.style.setProperty('--surface', '#12251a');
+    } else if (activeTheme === 'hacker') {
+      root.style.setProperty('--cyan', '#00ff00');
+      root.style.setProperty('--purple', '#009900');
+      root.style.setProperty('--background', '#000000');
+      root.style.setProperty('--surface', '#0a0a0a');
+    } else {
+      root.style.setProperty('--cyan', '#00e5ff');
+      root.style.setProperty('--purple', '#a855f7');
+      root.style.setProperty('--background', '#0b0f19');
+      root.style.setProperty('--surface', '#131b2e');
+    }
+  }, []);
+
   const navigate = (to) => {
     setView(to);
     setViewKey(Date.now());

@@ -10,6 +10,14 @@ const MODES = {
 const RADIUS = 105;
 const CIRC   = 2 * Math.PI * RADIUS; // 659.7
 
+const SOUNDSCAPES = [
+  { id: 'rain', name: '🌧️ Gentle Rain', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+  { id: 'cafe', name: '☕ Parisian Café', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3' },
+  { id: 'forest', name: '🌲 Forest Birds', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
+  { id: 'space', name: '🛸 Space Drone', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3' },
+  { id: 'waves', name: '🌊 Ocean Waves', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3' }
+];
+
 export default function TimerView() {
   const [modeKey,   setModeKey]   = useState('focus');
   const [timeLeft,  setTimeLeft]  = useState(MODES.focus.duration);
@@ -20,11 +28,30 @@ export default function TimerView() {
   const [history,   setHistory]   = useState([]);
   const [pulse,     setPulse]     = useState(false);
   const intervalRef = useRef(null);
-  const audioRef    = useRef(null);
+
+  // Soundscape audio elements
+  const audioRefs = useRef({});
+  const [soundVolumes, setSoundVolumes] = useState({
+    rain: 0,
+    cafe: 0,
+    forest: 0,
+    space: 0,
+    waves: 0
+  });
 
   useEffect(() => {
     api.subjects.list().then(setSubjects).catch(() => {});
     api.sessions.list().then(setHistory).catch(() => {});
+
+    // Clean up soundscapes on unmount
+    return () => {
+      Object.values(audioRefs.current).forEach(audio => {
+        if (audio) {
+          audio.pause();
+          audio.src = '';
+        }
+      });
+    };
   }, []);
 
   // Keyboard shortcut: Space = start/pause
@@ -64,6 +91,11 @@ export default function TimerView() {
       await api.sessions.create({ subject_id: sid || null, duration: 25, mode: 'focus' }).catch(() => {});
       const h = await api.sessions.list().catch(() => []);
       setHistory(h);
+      
+      // Earn 50 ByteCoins for completing a deep focus Pomodoro!
+      const currentCoins = Number(localStorage.getItem('nexus_coins') || '0');
+      localStorage.setItem('nexus_coins', (currentCoins + 50).toString());
+      alert("🎉 Pomodoro finished! +50 ByteCoins earned!");
     }
   };
 
@@ -80,6 +112,27 @@ export default function TimerView() {
     clearInterval(intervalRef.current);
     setRunning(false);
     setTimeLeft(mode.duration);
+  };
+
+  const handleVolumeChange = (soundId, volume) => {
+    setSoundVolumes(prev => ({ ...prev, [soundId]: volume }));
+    
+    let audio = audioRefs.current[soundId];
+    if (!audio) {
+      const match = SOUNDSCAPES.find(s => s.id === soundId);
+      audio = new Audio(match.url);
+      audio.loop = true;
+      audioRefs.current[soundId] = audio;
+    }
+
+    if (volume === 0) {
+      audio.pause();
+    } else {
+      audio.volume = volume;
+      if (audio.paused) {
+        audio.play().catch(err => console.error("Soundscape playback error: ", err));
+      }
+    }
   };
 
   const fmt = (s) =>
@@ -122,9 +175,7 @@ export default function TimerView() {
             transition: 'filter 0.6s'
           }}>
             <svg className="timer-svg" width="240" height="240" viewBox="0 0 240 240">
-              {/* Outer decorative ring */}
               <circle cx="120" cy="120" r="116" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-              {/* Tick marks */}
               {Array.from({ length: 60 }, (_, i) => {
                 const a = (i / 60) * 2 * Math.PI;
                 const r1 = i % 5 === 0 ? 108 : 111;
@@ -137,16 +188,13 @@ export default function TimerView() {
                   />
                 );
               })}
-              {/* Track */}
               <circle className="timer-track" cx="120" cy="120" r={RADIUS} />
-              {/* Progress */}
               <circle
                 className={`timer-prog ${modeKey === 'focus' ? 'focus' : 'break'}`}
                 cx="120" cy="120" r={RADIUS}
                 strokeDashoffset={dashOffset}
                 style={{ stroke: mode.color, filter: `drop-shadow(0 0 10px ${mode.shadow})` }}
               />
-              {/* Dot at progress end */}
               {progress > 0.01 && (
                 <circle
                   cx={120 + RADIUS * Math.cos(-Math.PI / 2 + (1 - progress) * 2 * Math.PI)}
@@ -196,8 +244,29 @@ export default function TimerView() {
           </div>
         </div>
 
-        {/* Right — Stats & History */}
+        {/* Right — Stats & Soundscapes */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {/* Soundscape Mixer Card */}
+          <div className="card">
+            <div className="page-eyebrow" style={{ marginBottom: 12 }}>🌧️ Soundscape Mixer</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {SOUNDSCAPES.map(s => (
+                <div key={s.id} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text)' }}>
+                    <span>{s.name}</span>
+                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{Math.round(soundVolumes[s.id] * 100)}%</span>
+                  </div>
+                  <input 
+                    type="range" min="0" max="1" step="0.05"
+                    value={soundVolumes[s.id]} 
+                    onChange={e => handleVolumeChange(s.id, Number(e.target.value))}
+                    style={{ width: '100%', accentColor: 'var(--cyan)', cursor: 'pointer' }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Session stats */}
           <div className="card">
@@ -217,27 +286,11 @@ export default function TimerView() {
             ))}
           </div>
 
-          {/* Technique guide */}
-          <div className="card">
-            <div className="page-eyebrow" style={{ marginBottom: 12 }}>Pomodoro Method</div>
-            {[
-              { step: '01', text: 'Pick a task to work on', color: 'var(--cyan)'   },
-              { step: '02', text: '25 min deep focus session', color: 'var(--cyan)' },
-              { step: '03', text: '5 min short break', color: 'var(--green)'       },
-              { step: '04', text: 'Every 4 sessions → 15 min break', color: 'var(--purple)' },
-            ].map(s => (
-              <div key={s.step} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: s.color, width: 20 }}>{s.step}</span>
-                <span style={{ fontSize: 12, color: 'var(--text)' }}>{s.text}</span>
-              </div>
-            ))}
-          </div>
-
           {/* Recent sessions */}
           <div className="card" style={{ flex: 1 }}>
             <div className="page-eyebrow" style={{ marginBottom: 12 }}>Recent Sessions</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
-              {history.slice(0, 8).length > 0 ? history.slice(0, 8).map(s => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 150, overflowY: 'auto' }}>
+              {history.slice(0, 6).length > 0 ? history.slice(0, 6).map(s => (
                 <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
                   <div style={{ width: 6, height: 6, borderRadius: '50%', background: s.subject_color || 'var(--cyan)', flexShrink: 0 }} />
                   <span style={{ fontSize: 12, flex: 1, color: 'var(--text)' }}>{s.subject_name || 'General'}</span>
