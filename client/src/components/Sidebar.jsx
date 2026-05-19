@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 
 const ITEMS = [
   { id: 'dashboard',    icon: '⬡', label: 'HUB'   },
@@ -16,52 +16,18 @@ const ITEMS = [
   { id: 'credits',      icon: '✨', label: 'DEV'   },
 ];
 
-const TRACKS = [
-  { name: '🎧 Lofi Chillhop 24/7', url: 'https://stream.zeno.fm/f3wvbbqmdg8uv' },
-  { name: '🎹 Lofi Endless Radio', url: 'https://ssl.shoutcaststreaming.us:8034/stream' },
-  { name: '🌌 Ambient Synth Space', url: 'https://lofi.stream.laut.fm/lofi' }
-];
-
 export default function Sidebar({ active, onNav }) {
   const [playing, setPlaying] = useState(false);
-  const [trackIdx, setTrackIdx] = useState(0);
-  const [volume, setVolume] = useState(0.2);
-  const [showConsole, setShowConsole] = useState(false);
-  
   const audioRef = useRef(null);
 
   const toggleMusic = () => {
     if (playing) {
       audioRef.current.pause();
     } else {
-      audioRef.current.volume = volume;
+      audioRef.current.volume = 0.25;
       audioRef.current.play().catch(err => console.error("Audio playback error: ", err));
     }
     setPlaying(!playing);
-  };
-
-  const handleVolumeChange = (e) => {
-    const v = Number(e.target.value);
-    setVolume(v);
-    if (audioRef.current) {
-      audioRef.current.volume = v;
-    }
-  };
-
-  const handleTrackChange = (idx) => {
-    setTrackIdx(idx);
-    const wasPlaying = playing;
-    if (audioRef.current) {
-      audioRef.current.src = TRACKS[idx].url;
-      audioRef.current.load();
-      if (wasPlaying) {
-        audioRef.current.oncanplay = () => {
-          audioRef.current.volume = volume;
-          audioRef.current.play().catch(err => console.error("Audio autoplay error: ", err));
-          audioRef.current.oncanplay = null;
-        };
-      }
-    }
   };
 
   return (
@@ -83,72 +49,19 @@ export default function Sidebar({ active, onNav }) {
       
       <div style={{ flex: 1 }} />
       
-      {/* Zen Player Controls */}
-      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 12, position: 'relative' }}>
-        <audio ref={audioRef} loop src={TRACKS[trackIdx].url} />
-        
-        {/* Toggle Panel Button (Shows Settings Icon ⚙️) */}
+      {/* Lofi Study Music Player (Original Instant Single-Click headphones icon function) */}
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+        <audio ref={audioRef} loop src="https://stream.zeno.fm/f3wvbbqmdg8uv" />
         <button
           className="nav-item"
-          onClick={() => setShowConsole(!showConsole)}
-          title="Focus Music Console"
-          style={{ position: 'relative', margin: '4px 0', border: showConsole ? '1px solid var(--cyan)' : '1px solid transparent' }}
+          onClick={toggleMusic}
+          title="Lofi Study Radio"
+          style={{ position: 'relative' }}
         >
-          {playing && <div style={{ position: 'absolute', inset: 0, background: 'var(--cyan)', opacity: 0.2, borderRadius: 12, animation: 'pulse 2s infinite' }} />}
-          <span style={{ fontSize: 20 }}>{playing ? '⏸' : '⚙️'}</span>
-          <span className="nav-label">MUSIC</span>
+          {playing && <div style={{ position: 'absolute', inset: 0, background: 'var(--purple)', opacity: 0.2, borderRadius: 10, animation: 'pulse 2s infinite' }} />}
+          <span style={{ fontSize: 20 }}>{playing ? '⏸' : '🎧'}</span>
+          <span className="nav-label">LOFI</span>
         </button>
-
-        {/* Music & Focus Control Panel */}
-        {showConsole && (
-          <div style={{
-            position: 'absolute', left: 78, bottom: 0, width: 220, 
-            background: 'var(--surface)', border: '1px solid var(--border-hi)',
-            borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 12,
-            boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 1000
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 12, fontWeight: 'bold', color: 'var(--cyan)', letterSpacing: 1 }}>FOCUS PLAYER</div>
-              <button onClick={() => setShowConsole(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 14 }}>✕</button>
-            </div>
-            
-            {/* Play/Pause */}
-            <button className={`btn ${playing ? 'btn-purple' : 'btn-cyan'}`} onClick={toggleMusic} style={{ width: '100%', padding: '6px' }}>
-              {playing ? 'Pause Audio ⏸' : 'Play Audio ▶'}
-            </button>
-
-            {/* Track Selector */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>SELECT TRACK</span>
-              {TRACKS.map((t, idx) => (
-                <button 
-                  key={t.name}
-                  onClick={() => handleTrackChange(idx)}
-                  style={{
-                    textAlign: 'left', background: trackIdx === idx ? 'var(--cyan-dim)' : 'transparent',
-                    border: 'none', color: trackIdx === idx ? 'var(--cyan)' : 'var(--text)',
-                    padding: '4px 8px', borderRadius: 8, fontSize: 11, cursor: 'pointer'
-                  }}
-                >
-                  {t.name}
-                </button>
-              ))}
-            </div>
-
-            {/* Volume Control */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text-muted)' }}>
-                <span>VOLUME</span>
-                <span>{Math.round(volume * 100)}%</span>
-              </div>
-              <input 
-                type="range" min="0" max="1" step="0.05" 
-                value={volume} onChange={handleVolumeChange} 
-                style={{ width: '100%', accentColor: 'var(--cyan)', cursor: 'pointer' }}
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       <button
