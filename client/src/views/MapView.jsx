@@ -1,100 +1,144 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const HUBS = [
-  { id: 'tunis', name: 'Tunis Hub (ESPRIT Campus)', coords: { x: 300, y: 135 }, activeCount: 142, averageFocus: '138 mins', course: 'C++ & Compilers', flag: '🇹🇳', color: 'var(--cyan)' },
-  { id: 'new_york', name: 'New York City Node', coords: { x: 130, y: 90 }, activeCount: 89, averageFocus: '112 mins', course: 'React SPA layouts', flag: '🇺🇸', color: 'var(--purple)' },
-  { id: 'paris', name: 'Paris Node', coords: { x: 278, y: 92 }, activeCount: 74, averageFocus: '124 mins', course: 'Relational SQL procedural', flag: '🇫🇷', color: 'var(--green)' },
-  { id: 'tokyo', name: 'Tokyo Node', coords: { x: 508, y: 110 }, activeCount: 56, averageFocus: '145 mins', course: 'Embedded Robotics', flag: '🇯🇵', color: '#ec4899' },
-  { id: 'london', name: 'London Node', coords: { x: 270, y: 80 }, activeCount: 63, averageFocus: '118 mins', course: 'Algorithms theory', flag: '🇬🇧', color: '#3b82f6' }
+  { id: 'tunis', name: 'Tunis Hub (ESPRIT Campus)', coords: [36.8065, 10.1815], activeCount: 142, averageFocus: '138 mins', course: 'C++ & Compilers', flag: '🇹🇳', color: '#00e5ff' },
+  { id: 'new_york', name: 'New York City Node', coords: [40.7128, -74.0060], activeCount: 89, averageFocus: '112 mins', course: 'React SPA layouts', flag: '🇺🇸', color: '#a855f7' },
+  { id: 'paris', name: 'Paris Node', coords: [48.8566, 2.3522], activeCount: 74, averageFocus: '124 mins', course: 'Relational SQL procedural', flag: '🇫🇷', color: '#2ecc71' },
+  { id: 'tokyo', name: 'Tokyo Node', coords: [35.6762, 139.6503], activeCount: 56, averageFocus: '145 mins', course: 'Embedded Robotics', flag: '🇯🇵', color: '#ec4899' },
+  { id: 'london', name: 'London Node', coords: [51.5074, -0.1278], activeCount: 63, averageFocus: '118 mins', course: 'Algorithms theory', flag: '🇬🇧', color: '#3b82f6' }
 ];
 
 export default function MapView() {
   const [selectedHub, setSelectedHub] = useState(HUBS[0]);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const mapContainerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+
+  useEffect(() => {
+    // Dynamic loading of Leaflet styles & scripts from CDN for 100% bug-free compilation
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link');
+      link.id = 'leaflet-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+
+    const scriptId = 'leaflet-js';
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => setMapLoaded(true);
+      document.body.appendChild(script);
+    } else {
+      setMapLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mapLoaded || !mapContainerRef.current || mapInstanceRef.current) return;
+
+    // Initialize Leaflet map instance centered near Mediterranean
+    const map = window.L.map(mapContainerRef.current, {
+      center: [25, 10],
+      zoom: 2,
+      minZoom: 1.5,
+      maxZoom: 12,
+      zoomControl: false
+    });
+    mapInstanceRef.current = map;
+
+    // Apply stunning dark theme tiles (CartoDB Dark Matter)
+    window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+    }).addTo(map);
+
+    // Custom CSS for glowing pulsing markers
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .glowing-marker {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #fff;
+        position: relative;
+        box-shadow: 0 0 10px rgba(255,255,255,0.8);
+      }
+      .glowing-marker::after {
+        content: '';
+        position: absolute;
+        width: 300%;
+        height: 300%;
+        border-radius: 50%;
+        background: inherit;
+        opacity: 0.3;
+        top: -100%;
+        left: -100%;
+        animation: pulse-ring 2s infinite;
+      }
+      @keyframes pulse-ring {
+        0% { transform: scale(0.3); opacity: 0.8; }
+        100% { transform: scale(1.5); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Plot our global hubs with customized glowing markers
+    HUBS.forEach(hub => {
+      const customIcon = window.L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div class="glowing-marker" style="border: 3px solid ${hub.color}; background: #fff; box-shadow: 0 0 15px ${hub.color};"></div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+      });
+
+      const marker = window.L.marker(hub.coords, { icon: customIcon }).addTo(map);
+      
+      marker.on('click', () => {
+        setSelectedHub(hub);
+        map.setView(hub.coords, 5, { animate: true });
+      });
+    });
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [mapLoaded]);
 
   return (
     <div className="view" style={{ overflowY: 'auto' }}>
       
       <div className="page-header" style={{ marginBottom: 20 }}>
-        <div className="page-eyebrow">Knowledge OS · Global Network</div>
-        <h1 className="page-title">🗺️ Real Worldwide Cyber Map</h1>
-        <p className="page-subtitle">Real-life geographical projection tracking concurrent student sessions active globally across five continents.</p>
+        <div className="page-eyebrow">Knowledge OS · Global Community</div>
+        <h1 className="page-title">🗺️ Real-Life Interactive World Map</h1>
+        <p className="page-subtitle">Fully zoomable, borders-enabled geographic satellite projection highlighting international computer engineering study clusters.</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, paddingBottom: 40 }}>
         
-        {/* Left Column: Worldwide Continent Map */}
-        <div className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14, background: 'rgba(5, 8, 16, 0.95)', border: '1px solid var(--border)' }}>
-          <span style={{ fontSize: 10, fontWeight: 'bold', color: 'var(--cyan)', letterSpacing: 1 }}>📡 GLOBAL GEOGRAPHIC RADAR</span>
-          
-          <div style={{ position: 'relative', width: '100%', height: 350, background: '#050a14', borderRadius: 16, border: '1px solid rgba(255,255,255,0.03)', overflow: 'hidden' }}>
-            
-            {/* Real Continental World Map SVG */}
-            <svg width="100%" height="100%" viewBox="0 0 600 300" style={{ position: 'absolute', top: 0, left: 0 }}>
-              {/* Grid Background Pattern */}
-              <defs>
-                <pattern id="world-grid" width="12" height="12" patternUnits="userSpaceOnUse">
-                  <circle cx="6" cy="6" r="0.6" fill="rgba(0, 229, 255, 0.15)" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#world-grid)" />
-
-              {/* Geographic Path Outlines representing actual World Continents */}
-              <g fill="rgba(255, 255, 255, 0.02)" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1.2">
-                {/* North America */}
-                <path d="M 40,40 C 60,30 90,20 130,30 C 150,40 170,50 180,80 C 160,110 130,110 110,120 C 90,110 70,90 40,60 Z" />
-                
-                {/* South America */}
-                <path d="M 120,130 C 140,130 160,150 170,180 C 160,220 140,260 120,280 C 100,260 90,200 100,160 Z" />
-                
-                {/* Greenland */}
-                <path d="M 140,20 C 155,10 175,10 180,20 C 175,30 155,30 140,20 Z" />
-
-                {/* Europe & Asia (Eurasia) */}
-                <path d="M 230,40 C 260,30 320,20 400,20 C 450,20 520,30 550,50 C 560,70 540,110 520,130 C 480,140 440,150 400,160 C 350,160 310,130 280,120 C 260,110 240,80 230,40 Z" />
-                
-                {/* Africa */}
-                <path d="M 260,110 C 290,90 330,90 350,110 C 360,130 370,160 360,190 C 350,230 330,260 310,270 C 300,260 290,220 280,180 C 260,160 250,130 260,110 Z" />
-
-                {/* Australia */}
-                <path d="M 480,180 C 520,185 540,190 550,210 C 540,240 510,240 480,230 C 460,220 460,190 480,180 Z" />
-              </g>
-
-              {/* Equator Line indicator */}
-              <line x1="0" y1="150" x2="600" y2="150" stroke="rgba(0, 229, 255, 0.05)" strokeDasharray="4 8" />
-            </svg>
-
-            {/* Glowing Pulsing Interactive Nodes over Geographic Positions */}
-            {HUBS.map(hub => {
-              const isSelected = selectedHub.id === hub.id;
-              
-              return (
-                <div 
-                  key={hub.id}
-                  onClick={() => setSelectedHub(hub)}
-                  style={{ 
-                    position: 'absolute', left: hub.coords.x, top: hub.coords.y,
-                    transform: 'translate(-50%, -50%)', cursor: 'pointer', zIndex: 10
-                  }}
-                >
-                  {/* Outer glowing pulsing waves */}
-                  <div style={{ 
-                    position: 'absolute', width: 24, height: 24, borderRadius: '50%',
-                    background: hub.color, opacity: 0.2, transform: 'scale(1.8)',
-                    animation: 'pulse 2s infinite'
-                  }} />
-                  
-                  {/* Core neon hotspot */}
-                  <div style={{ 
-                    width: 10, height: 10, borderRadius: '50%', background: '#fff',
-                    border: `2.5px solid ${hub.color}`,
-                    boxShadow: isSelected ? `0 0 16px ${hub.color}` : 'none',
-                    transition: 'all 0.2s'
-                  }} />
-                </div>
-              );
-            })}
-
+        {/* Left Column: Real-Life Leaflet Map */}
+        <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14, background: 'rgba(5, 8, 16, 0.95)', border: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: 10, fontWeight: 'bold', color: 'var(--cyan)', letterSpacing: 1 }}>📡 SATELLITE STUDENT TELEMETRY</span>
+            <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>Zoom & drag to inspect global countries</span>
           </div>
+          
+          <div 
+            ref={mapContainerRef} 
+            style={{ 
+              width: '100%', 
+              height: 380, 
+              borderRadius: 16, 
+              border: '1px solid rgba(255,255,255,0.03)', 
+              overflow: 'hidden', 
+              background: '#070c17',
+              zIndex: 1
+            }} 
+          />
         </div>
 
         {/* Right Column: Active Node Info */}
