@@ -17,9 +17,9 @@ const ITEMS = [
 ];
 
 const TRACKS = [
-  { name: '🎧 Lofi Chillhop', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
-  { name: '🎹 Classical Piano', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3' },
-  { name: '🌌 Ambient Synth', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' }
+  { name: '🎧 Lofi Chillhop 24/7', url: 'https://stream.zeno.fm/f3wvbbqmdg8uv' },
+  { name: '🎹 Lofi Endless Radio', url: 'https://ssl.shoutcaststreaming.us:8034/stream' },
+  { name: '🌌 Ambient Synth Space', url: 'https://lofi.stream.laut.fm/lofi' }
 ];
 
 export default function Sidebar({ active, onNav }) {
