@@ -92,7 +92,6 @@ export default function TimerView() {
       const h = await api.sessions.list().catch(() => []);
       setHistory(h);
       
-      // Earn 50 ByteCoins for completing a deep focus Pomodoro!
       const currentCoins = Number(localStorage.getItem('nexus_coins') || '0');
       localStorage.setItem('nexus_coins', (currentCoins + 50).toString());
       alert("🎉 Pomodoro finished! +50 ByteCoins earned!");
@@ -154,7 +153,7 @@ export default function TimerView() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24 }}>
-        {/* Left — Timer */}
+        {/* Left — Timer & Visualizer */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '40px 32px' }}>
 
           {/* Mode tabs */}
@@ -235,13 +234,16 @@ export default function TimerView() {
           </div>
 
           {/* Subject selector */}
-          <div style={{ width: '100%', maxWidth: 280 }}>
+          <div style={{ width: '100%', maxWidth: 280, marginBottom: 12 }}>
             <div className="input-label" style={{ textAlign: 'center', marginBottom: 8 }}>Studying</div>
             <select className="input" value={subject} onChange={e => setSubject(e.target.value)}>
               <option value="">— Select subject —</option>
               {subjects.map(s => <option key={s.id} value={s.name}>{s.icon} {s.name}</option>)}
             </select>
           </div>
+
+          {/* Soundscape Visualizer */}
+          <SoundVisualizer active={running} />
         </div>
 
         {/* Right — Stats & Soundscapes */}
@@ -289,8 +291,8 @@ export default function TimerView() {
           {/* Recent sessions */}
           <div className="card" style={{ flex: 1 }}>
             <div className="page-eyebrow" style={{ marginBottom: 12 }}>Recent Sessions</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 150, overflowY: 'auto' }}>
-              {history.slice(0, 6).length > 0 ? history.slice(0, 6).map(s => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 120, overflowY: 'auto' }}>
+              {history.slice(0, 5).length > 0 ? history.slice(0, 5).map(s => (
                 <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
                   <div style={{ width: 6, height: 6, borderRadius: '50%', background: s.subject_color || 'var(--cyan)', flexShrink: 0 }} />
                   <span style={{ fontSize: 12, flex: 1, color: 'var(--text)' }}>{s.subject_name || 'General'}</span>
@@ -301,6 +303,61 @@ export default function TimerView() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── NEON MUSIC VISUALIZER COMPONENT ──
+function SoundVisualizer({ active }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let frame;
+    let angle = 0;
+
+    const render = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const cy = canvas.height / 2;
+
+      // Draw primary neon wave
+      ctx.strokeStyle = active ? 'var(--cyan)' : 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = active ? 2 : 1;
+      ctx.shadowBlur = active ? 10 : 0;
+      ctx.shadowColor = 'var(--cyan)';
+      ctx.beginPath();
+      for (let x = 0; x < canvas.width; x++) {
+        const amp = active ? 16 * Math.cos(x * 0.008 + angle * 0.3) : 2;
+        const y = cy + Math.sin(x * 0.04 + angle) * amp;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Draw secondary neon wave
+      ctx.strokeStyle = active ? 'var(--purple)' : 'rgba(255,255,255,0.02)';
+      ctx.shadowColor = 'var(--purple)';
+      ctx.beginPath();
+      for (let x = 0; x < canvas.width; x++) {
+        const amp = active ? 12 * Math.sin(x * 0.01 - angle * 0.5) : 1;
+        const y = cy + Math.cos(x * 0.03 - angle) * amp;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      angle += active ? 0.06 : 0.01;
+      frame = requestAnimationFrame(render);
+    };
+    render();
+    return () => cancelAnimationFrame(frame);
+  }, [active]);
+
+  return (
+    <div style={{ width: '100%', maxWidth: 280, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
+      <span style={{ fontSize: 10, fontWeight: 'bold', color: 'var(--text-muted)', letterSpacing: 1 }}>NEON MUSIC VISUALIZER</span>
+      <canvas ref={canvasRef} width={280} height={50} style={{ background: 'rgba(0,0,0,0.15)', borderRadius: 10, border: '1px solid var(--border)' }} />
     </div>
   );
 }
