@@ -70,6 +70,7 @@ function initSchema() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
+      avatar TEXT DEFAULT '',
       created_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS snippets (
@@ -123,6 +124,19 @@ function initSchema() {
     ];
     for (const [t,l,c,tags] of defaultSnippets) run(`INSERT INTO snippets (title,lang,code,tags) VALUES (?,?,?,?)`, [t,l,c,tags]);
   }
+
+  // Seed Dummy Sessions for the Dashboard Activity Chart
+  if (get('SELECT COUNT(*) as c FROM sessions').c === 0) {
+    for (let i = 0; i < 7; i++) {
+      const numSessions = Math.floor(Math.random() * 4) + 1; // 1 to 4 sessions per day
+      for (let j = 0; j < numSessions; j++) {
+        const duration = [15, 25, 45, 60][Math.floor(Math.random() * 4)];
+        run(`INSERT INTO sessions (subject_id, duration, mode, completed_at) VALUES (1, ?, 'focus', datetime('now', '-${i} days'))`, [duration]);
+      }
+    }
+  }
+
+  try { run('ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ""'); } catch(e) { /* already exists */ }
 }
 
 module.exports = { getDb, all, run, get };

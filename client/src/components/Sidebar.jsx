@@ -9,6 +9,7 @@ const ITEMS = [
   { id: 'notes',        icon: '≡', label: 'NOTES' },
   { id: 'resources',    icon: '📚', label: 'LIB'   },
   { id: 'ai',           icon: '✦', label: 'AI'    },
+  { id: 'profile',      icon: '👤', label: 'USER'  },
 ];
 
 export default function Sidebar({ active, onNav }) {

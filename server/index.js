@@ -207,13 +207,16 @@ app.post('/api/ai/random-snippet', async (req,res) => {
       headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${apiKey}` },
       body: JSON.stringify({ 
         model: 'llama-3.1-8b-instant',
-        messages: [{ role: 'user', content: `Generate a random, useful, and interesting code snippet (e.g. JS, Python, C++, CSS). Return ONLY a JSON object: {"title":"Snippet Title","lang":"javascript","code":"actual_code","tags":["tag1","tag2"]}. Do not use markdown blocks outside the JSON.` }] 
+        response_format: { type: "json_object" },
+        messages: [{ role: 'user', content: `Generate a random, useful, and interesting code snippet (e.g. JS, Python, C++, CSS). Return ONLY a JSON object exactly like this: {"title":"Snippet Title","lang":"javascript","code":"actual_code","tags":["tag1","tag2"]}. Do not include markdown blocks or any other text.` }] 
       })
     });
     const data = await r.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
-    const text = data.choices[0].message.content.replace(/```json|```/g,'').trim();
-    const snippet = JSON.parse(text);
+    const text = data.choices[0].message.content;
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("AI did not return valid JSON");
+    const snippet = JSON.parse(match[0]);
     res.json({ snippet });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
@@ -243,15 +246,15 @@ app.post('/api/auth/login', wait((req,res) => {
   const { username, password } = req.body;
   const user = get('SELECT * FROM users WHERE username=?', [username]);
   if (!user || user.password !== password) return res.status(401).json({ error: 'Invalid credentials' });
-  res.json({ success: true, user: { id: user.id, username: user.username } });
+  res.json({ success: true, user: { id: user.id, username: user.username, avatar: user.avatar } });
 }));
 
 app.post('/api/auth/register', wait((req,res) => {
   const { username, password } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
   try {
-    const { lastInsertRowid: id } = run('INSERT INTO users (username, password) VALUES (?,?)', [username, password]);
-    res.status(201).json({ success: true, user: { id, username } });
+    const { lastInsertRowid: id } = run('INSERT INTO users (username, password, avatar) VALUES (?,?,?)', [username, password, '']);
+    res.status(201).json({ success: true, user: { id, username, avatar: '' } });
   } catch(e) {
     res.status(400).json({ error: 'Username may already exist' });
   }
@@ -263,6 +266,14 @@ app.post('/api/auth/update-password', wait((req,res) => {
   if (!user) return res.status(404).json({ error: 'User not found' });
   run('UPDATE users SET password=? WHERE username=?', [newPassword, username]);
   res.json({ success: true });
+}));
+
+app.post('/api/auth/update-avatar', wait((req,res) => {
+  const { username, avatar } = req.body;
+  const user = get('SELECT * FROM users WHERE username=?', [username]);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  run('UPDATE users SET avatar=? WHERE username=?', [avatar, username]);
+  res.json({ success: true, avatar });
 }));
 
 // ─── SNIPPETS ───────────────────────────────────────────────────────────────
