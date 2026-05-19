@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import api from '../api';
+import { api } from '../api';
 
 export default function LoginView({ onLogin }) {
   const [isRegister, setIsRegister] = useState(false);

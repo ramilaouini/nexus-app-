@@ -111,6 +111,18 @@ function initSchema() {
     ];
     for (const [sid,f,b] of cards) run(`INSERT INTO flashcards (subject_id,front,back) VALUES (?,?,?)`,[sid,f,b]);
   }
+
+  if (get('SELECT COUNT(*) as c FROM snippets').c === 0) {
+    const defaultSnippets = [
+      ['C++ Fast I/O', 'cpp', 'ios_base::sync_with_stdio(false);\ncin.tie(NULL);', 'C++,Competitive Programming'],
+      ['Python List Comprehension', 'python', 'squares = [x**2 for x in range(10) if x % 2 == 0]', 'Python,Shortcuts'],
+      ['CSS Glassmorphism', 'css', '.glass {\n  background: rgba(255, 255, 255, 0.05);\n  backdrop-filter: blur(10px);\n  border: 1px solid rgba(255, 255, 255, 0.1);\n  border-radius: 16px;\n}', 'CSS,Design,UI'],
+      ['HTML5 Boilerplate', 'html', '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <title>Document</title>\n</head>\n<body>\n  \n</body>\n</html>', 'HTML,Starter'],
+      ['React UseEffect Fetch', 'javascript', 'useEffect(() => {\n  const fetchData = async () => {\n    const res = await fetch("/api/data");\n    const json = await res.json();\n    setData(json);\n  };\n  fetchData();\n}, []);', 'React,JavaScript'],
+      ['JSON Example', 'json', '{\n  "name": "Nexus",\n  "version": "1.0.0",\n  "features": ["AI", "Flashcards", "Snippets"]\n}', 'JSON,Config']
+    ];
+    for (const [t,l,c,tags] of defaultSnippets) run(`INSERT INTO snippets (title,lang,code,tags) VALUES (?,?,?,?)`, [t,l,c,tags]);
+  }
 }
 
 module.exports = { getDb, all, run, get };

@@ -268,7 +268,7 @@ app.post('/api/auth/update-password', wait((req,res) => {
 // ─── SNIPPETS ───────────────────────────────────────────────────────────────
 app.get('/api/snippets', wait((req,res) => {
   const { user_id } = req.query;
-  const query = user_id ? 'SELECT * FROM snippets WHERE user_id=? ORDER BY created_at DESC' : 'SELECT * FROM snippets ORDER BY created_at DESC';
+  const query = user_id ? 'SELECT * FROM snippets WHERE user_id=? OR user_id IS NULL ORDER BY created_at DESC' : 'SELECT * FROM snippets ORDER BY created_at DESC';
   const params = user_id ? [user_id] : [];
   res.json(all(query, params).map(s => ({...s, tags: s.tags ? s.tags.split(',').filter(Boolean) : []})));
 }));
