@@ -41,5 +41,9 @@ export const api = {
   ai: {
     chat:          (messages, subject) => req('/ai/chat', { method: 'POST', body: { messages, subject } }),
     generateCards: (topic, count, sid) => req('/ai/generate-cards', { method: 'POST', body: { topic, count, subject_id: sid } }),
-  }
+  },
+  post: (path, body) => req(path, { method: 'POST', body }),
+  get: (path) => req(path),
+  put: (path, body) => req(path, { method: 'PUT', body }),
+  delete: (path) => req(path, { method: 'DELETE' }),
 };

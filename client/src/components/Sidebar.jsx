@@ -28,6 +28,16 @@ export default function Sidebar({ active, onNav }) {
           </button>
         </div>
       ))}
+      <div style={{ flex: 1 }} />
+      <button
+        className="nav-item"
+        onClick={() => { localStorage.removeItem('nexus_user'); window.location.reload(); }}
+        title="Logout"
+        style={{ marginBottom: '16px' }}
+      >
+        <span style={{ fontSize: 20 }}>⎋</span>
+        <span className="nav-label">OUT</span>
+      </button>
     </aside>
   );
 }

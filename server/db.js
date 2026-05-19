@@ -66,6 +66,26 @@ function initSchema() {
       title TEXT NOT NULL, content TEXT DEFAULT '',
       created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
     );
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS snippets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL, lang TEXT DEFAULT 'javascript',
+      code TEXT NOT NULL, tags TEXT DEFAULT '',
+      user_id INTEGER,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS user_achievements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      badge_id INTEGER NOT NULL,
+      unlocked_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(user_id, badge_id)
+    );
   `);
   save();
 

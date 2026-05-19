@@ -11,15 +11,22 @@ import RoadmapView    from './views/RoadmapView';
 import ResourcesView  from './views/ResourcesView';
 import CodeSnippetsView from './views/CodeSnippetsView';
 import AchievementsView from './views/AchievementsView';
+import LoginView      from './views/LoginView';
 
 export default function App() {
+  const [user, setUser]         = useState(() => JSON.parse(localStorage.getItem('nexus_user') || 'null'));
   const [view, setView]         = useState('dashboard');
   const [fcSubject, setFcSubject] = useState(null);
-  const [viewKey, setViewKey]   = useState(0); // force re-mount on nav
+  const [viewKey, setViewKey]   = useState(Date.now());
+
+  const handleLogin = (u) => {
+    localStorage.setItem('nexus_user', JSON.stringify(u));
+    setUser(u);
+  };
 
   const navigate = (to) => {
     setView(to);
-    setViewKey(k => k + 1);
+    setViewKey(Date.now());
     if (to !== 'flashcards') setFcSubject(null);
   };
 
@@ -28,6 +35,8 @@ export default function App() {
     setView('flashcards');
     setViewKey(k => k + 1);
   };
+
+  if (!user) return <LoginView onLogin={handleLogin} />;
 
   return (
     <div className="app">
@@ -43,8 +52,8 @@ export default function App() {
         {view === 'ai'         && <AIView      key={viewKey} />}
         {view === 'roadmap'    && <RoadmapView key={viewKey} />}
         {view === 'resources'  && <ResourcesView key={viewKey} />}
-        {view === 'snippets'   && <CodeSnippetsView key={viewKey} />}
-        {view === 'achievements'&& <AchievementsView key={viewKey} />}
+        {view === 'snippets'   && <CodeSnippetsView key={viewKey} user={user} />}
+        {view === 'achievements'&& <AchievementsView key={viewKey} user={user} />}
       </main>
     </div>
   );

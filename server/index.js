@@ -198,6 +198,113 @@ app.post('/api/ai/generate-cards', async (req,res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/ai/random-snippet', async (req,res) => {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return res.status(400).json({ error:'Add GROQ_API_KEY to your .env file' });
+  try {
+    const r = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({ 
+        model: 'llama-3.1-8b-instant',
+        messages: [{ role: 'user', content: `Generate a random, useful, and interesting code snippet (e.g. JS, Python, C++, CSS). Return ONLY a JSON object: {"title":"Snippet Title","lang":"javascript","code":"actual_code","tags":["tag1","tag2"]}. Do not use markdown blocks outside the JSON.` }] 
+      })
+    });
+    const data = await r.json();
+    if (data.error) return res.status(500).json({ error: data.error.message });
+    const text = data.choices[0].message.content.replace(/```json|```/g,'').trim();
+    const snippet = JSON.parse(text);
+    res.json({ snippet });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/ai/random-cards', async (req,res) => {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return res.status(400).json({ error:'Add GROQ_API_KEY to your .env file' });
+  try {
+    const r = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({ 
+        model: 'llama-3.1-8b-instant',
+        messages: [{ role: 'user', content: `Generate 5 random educational flashcards about any interesting academic subject. Return ONLY a JSON array, no markdown. Format: [{"front":"question","back":"answer"}]` }] 
+      })
+    });
+    const data = await r.json();
+    if (data.error) return res.status(500).json({ error: data.error.message });
+    const text = data.choices[0].message.content.replace(/```json|```/g,'').trim();
+    const cards = JSON.parse(text);
+    res.json({ cards });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// ─── AUTH & USERS ───────────────────────────────────────────────────────────
+app.post('/api/auth/login', wait((req,res) => {
+  const { username, password } = req.body;
+  const user = get('SELECT * FROM users WHERE username=?', [username]);
+  if (!user || user.password !== password) return res.status(401).json({ error: 'Invalid credentials' });
+  res.json({ success: true, user: { id: user.id, username: user.username } });
+}));
+
+app.post('/api/auth/register', wait((req,res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+  try {
+    const { lastInsertRowid: id } = run('INSERT INTO users (username, password) VALUES (?,?)', [username, password]);
+    res.status(201).json({ success: true, user: { id, username } });
+  } catch(e) {
+    res.status(400).json({ error: 'Username may already exist' });
+  }
+}));
+
+app.post('/api/auth/update-password', wait((req,res) => {
+  const { username, newPassword } = req.body;
+  const user = get('SELECT * FROM users WHERE username=?', [username]);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  run('UPDATE users SET password=? WHERE username=?', [newPassword, username]);
+  res.json({ success: true });
+}));
+
+// ─── SNIPPETS ───────────────────────────────────────────────────────────────
+app.get('/api/snippets', wait((req,res) => {
+  const { user_id } = req.query;
+  const query = user_id ? 'SELECT * FROM snippets WHERE user_id=? ORDER BY created_at DESC' : 'SELECT * FROM snippets ORDER BY created_at DESC';
+  const params = user_id ? [user_id] : [];
+  res.json(all(query, params).map(s => ({...s, tags: s.tags ? s.tags.split(',').filter(Boolean) : []})));
+}));
+
+app.post('/api/snippets', wait((req,res) => {
+  const { title, lang, code, tags=[], user_id } = req.body;
+  const { lastInsertRowid: id } = run('INSERT INTO snippets (title,lang,code,tags,user_id) VALUES (?,?,?,?,?)', [title, lang, code, tags.join(','), user_id]);
+  res.status(201).json({ id, title, lang, code, tags });
+}));
+
+app.put('/api/snippets/:id', wait((req,res) => {
+  const { title, lang, code, tags=[] } = req.body;
+  run('UPDATE snippets SET title=?,lang=?,code=?,tags=? WHERE id=?', [title, lang, code, tags.join(','), req.params.id]);
+  res.json({ success: true });
+}));
+
+app.delete('/api/snippets/:id', wait((req,res) => {
+  run('DELETE FROM snippets WHERE id=?', [req.params.id]);
+  res.json({ success: true });
+}));
+
+// ─── ACHIEVEMENTS ───────────────────────────────────────────────────────────
+app.get('/api/achievements/:userId', wait((req,res) => {
+  res.json(all('SELECT badge_id FROM user_achievements WHERE user_id=?', [req.params.userId]).map(r => r.badge_id));
+}));
+
+app.post('/api/achievements/:userId', wait((req,res) => {
+  const { badge_id } = req.body;
+  try {
+    run('INSERT INTO user_achievements (user_id, badge_id) VALUES (?,?)', [req.params.userId, badge_id]);
+    res.json({ success: true });
+  } catch(e) {
+    res.json({ success: true }); // already unlocked
+  }
+}));
+
 // Serve static
 app.use(express.static(path.join(__dirname,'../client/dist')));
 app.get('*',(req,res) => { if (!req.path.startsWith('/api')) res.sendFile(path.join(__dirname,'../client/dist/index.html')); });

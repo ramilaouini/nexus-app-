@@ -45,57 +45,6 @@ function AddCardModal({ subjects, onClose, onSave, defaultSubjectId }) {
   );
 }
 
-function GenModal({ subjects, onClose, onGenerate }) {
-  const [topic, setTopic] = useState('');
-  const [count, setCount] = useState(5);
-  const [sid, setSid] = useState(subjects[0]?.id || '');
-  const [loading, setLoading] = useState(false);
-
-  const generate = async () => {
-    if (!topic.trim()) return;
-    setLoading(true);
-    try { await onGenerate(topic, count, +sid); onClose(); }
-    catch (e) { alert('AI Error: ' + e.message); }
-    finally { setLoading(false); }
-  };
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <span className="modal-title">✦ AI GENERATE CARDS</span>
-          <button className="btn btn-ghost btn-icon" onClick={onClose}>✕</button>
-        </div>
-        <div className="modal-form">
-          <div>
-            <div className="input-label">Topic</div>
-            <input className="input" placeholder="e.g. Quantum Mechanics, World War II..." value={topic} onChange={e => setTopic(e.target.value)} />
-          </div>
-          <div className="grid-2">
-            <div>
-              <div className="input-label">Number of Cards</div>
-              <select className="input" value={count} onChange={e => setCount(+e.target.value)}>
-                {[3,5,8,10].map(n => <option key={n} value={n}>{n} cards</option>)}
-              </select>
-            </div>
-            <div>
-              <div className="input-label">Add to Subject</div>
-              <select className="input" value={sid} onChange={e => setSid(e.target.value)}>
-                {subjects.map(s => <option key={s.id} value={s.id}>{s.icon} {s.name}</option>)}
-              </select>
-            </div>
-          </div>
-        </div>
-        <div className="modal-footer">
-          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <button className="btn btn-cyan" onClick={generate} disabled={loading}>
-            {loading ? <><div className="spinner" />Generating…</> : '✦ Generate'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function FlashcardsView({ initialSubjectId }) {
   const [subjects, setSubjects]   = useState([]);
@@ -103,10 +52,11 @@ export default function FlashcardsView({ initialSubjectId }) {
   const [filterSid, setFilterSid] = useState(initialSubjectId || 'all');
   const [idx, setIdx]             = useState(0);
   const [flipped, setFlipped]     = useState(false);
-  const [modal, setModal]         = useState(null); // 'add' | 'gen'
+  const [modal, setModal]         = useState(null); // 'add'
   const [mode, setMode]           = useState('study'); // 'study' | 'list'
   const [saving, setSaving]       = useState(false);
   const [feedback, setFeedback]   = useState(null); // 'hard'|'medium'|'easy'
+  const [generating, setGenerating] = useState(false);
 
   const load = async () => {
     const [subs, allCards] = await Promise.all([api.subjects.list(), api.flashcards.list()]);
@@ -139,6 +89,22 @@ export default function FlashcardsView({ initialSubjectId }) {
   const subjectColor = (sid) => subjects.find(s => s.id === sid)?.color || 'var(--cyan)';
   const subjectName  = (sid) => subjects.find(s => s.id === sid)?.name || '—';
 
+  const handleRandomAI = async () => {
+    setGenerating(true);
+    try {
+      const res = await api.post('/ai/random-cards', {});
+      const sid = filterSid !== 'all' ? +filterSid : subjects[0]?.id;
+      if (!sid) throw new Error("Please create a subject first");
+      for (const c of res.cards) {
+        await api.flashcards.create({ subject_id: sid, front: c.front, back: c.back });
+      }
+      await load();
+    } catch(e) {
+      alert('AI Generation failed: ' + e.message);
+    }
+    setGenerating(false);
+  };
+
   return (
     <div className="view">
       {/* Header */}
@@ -147,7 +113,9 @@ export default function FlashcardsView({ initialSubjectId }) {
         <div className="flex items-center justify-between">
           <h1 className="page-title">Flashcards</h1>
           <div className="flex gap-3">
-            <button className="btn btn-ghost" onClick={() => setModal('gen')}>✦ AI Generate</button>
+            <button className="btn btn-purple" onClick={handleRandomAI} disabled={generating}>
+              {generating ? 'Generating...' : '✦ AI Random Cards'}
+            </button>
             <button className="btn btn-cyan"  onClick={() => setModal('add')}>+ Add Card</button>
           </div>
         </div>
@@ -180,7 +148,9 @@ export default function FlashcardsView({ initialSubjectId }) {
           <div style={{ fontSize:40, marginBottom:12 }}>⟡</div>
           <p style={{ color:'var(--text-muted)', marginBottom:16 }}>No cards here. Add some or generate with AI.</p>
           <div className="flex gap-3 justify-center">
-            <button className="btn btn-ghost" onClick={() => setModal('gen')}>✦ AI Generate</button>
+            <button className="btn btn-purple" onClick={handleRandomAI} disabled={generating}>
+              {generating ? 'Generating...' : '✦ AI Random Cards'}
+            </button>
             <button className="btn btn-cyan"  onClick={() => setModal('add')}>+ Add Card</button>
           </div>
         </div>
@@ -275,11 +245,6 @@ export default function FlashcardsView({ initialSubjectId }) {
       {modal === 'add' && (
         <AddCardModal subjects={subjects} defaultSubjectId={filterSid !== 'all' ? +filterSid : null}
           onClose={() => setModal(null)} onSave={async (d) => { await api.flashcards.create(d); load(); }} />
-      )}
-      {modal === 'gen' && (
-        <GenModal subjects={subjects}
-          onClose={() => setModal(null)}
-          onGenerate={async (topic, count, sid) => { await api.ai.generateCards(topic, count, sid); load(); }} />
       )}
     </div>
   );
