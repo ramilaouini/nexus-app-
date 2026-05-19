@@ -5,6 +5,7 @@ const ITEMS = [
   { id: 'roadmap',      icon: '◮', label: 'PATH'  },
   { id: 'subjects',     icon: '◈', label: 'SUB'   },
   { id: 'flashcards',   icon: '⟡', label: 'CARDS' },
+  { id: 'quiz',         icon: '📝', label: 'QUIZ'  },
   { id: 'snippets',     icon: '⌨', label: 'CODE'  },
   { id: 'achievements', icon: '🏆', label: 'AWARDS'},
   { id: 'timer',        icon: '◎', label: 'FOCUS' },
@@ -49,7 +50,7 @@ export default function Sidebar({ active, onNav }) {
       
       <div style={{ flex: 1 }} />
       
-      {/* Lofi Study Music Player (Original Instant Single-Click headphones icon function) */}
+      {/* Lofi Study Music Player */}
       <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
         <audio ref={audioRef} loop src="https://stream.zeno.fm/f3wvbbqmdg8uv" />
         <button
