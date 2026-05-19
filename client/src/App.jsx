@@ -20,6 +20,10 @@ export default function App() {
   const [view, setView]         = useState('dashboard');
   const [fcSubject, setFcSubject] = useState(null);
   const [viewKey, setViewKey]   = useState(Date.now());
+  
+  // Theme & Language State
+  const [theme, setTheme]       = useState(() => localStorage.getItem('nexus_theme') || 'dark');
+  const [lang, setLang]         = useState(() => localStorage.getItem('nexus_lang') || 'en');
 
   const handleLogin = (u) => {
     localStorage.setItem('nexus_user', JSON.stringify(u));
@@ -41,23 +45,57 @@ export default function App() {
   if (!user) return <LoginView onLogin={handleLogin} />;
 
   return (
-    <div className="app">
+    <div className={`app ${theme === 'light' ? 'light-theme' : ''}`}>
       <Background3D />
       <div className="grid-overlay" />
       <Sidebar active={view} onNav={navigate} />
-      <main className="main">
-        {view === 'dashboard'  && <Dashboard  key={viewKey} onNav={navigate} />}
-        {view === 'subjects'   && <SubjectsView  key={viewKey} onSelectSubject={goFlashcards} />}
-        {view === 'flashcards' && <FlashcardsView key={viewKey} initialSubjectId={fcSubject?.id} />}
-        {view === 'timer'      && <TimerView   key={viewKey} />}
-        {view === 'notes'      && <NotesView   key={viewKey} />}
-        {view === 'ai'         && <AIView      key={viewKey} />}
-        {view === 'roadmap'    && <RoadmapView key={viewKey} />}
-        {view === 'resources'  && <ResourcesView key={viewKey} />}
-        {view === 'snippets'   && <CodeSnippetsView key={viewKey} user={user} />}
-        {view === 'achievements'&& <AchievementsView key={viewKey} user={user} />}
-        {view === 'profile'    && <ProfileView key={viewKey} user={user} setUser={setUser} />}
-        {view === 'credits'    && <CreditsView key={viewKey} />}
+      
+      <main className="main" style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100vh', overflow: 'hidden' }}>
+        {/* Global Glass Header */}
+        <header style={{
+          display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 16,
+          padding: '12px 24px', background: 'rgba(255,255,255,0.01)', backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid var(--border)', zIndex: 10, flexShrink: 0
+        }}>
+          {/* Language Selector */}
+          <select 
+            value={lang} 
+            onChange={e => { setLang(e.target.value); localStorage.setItem('nexus_lang', e.target.value); }} 
+            className="input" 
+            style={{ width: 140, padding: '6px 12px', fontSize: 13, background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-bright)' }}
+          >
+            <option value="en">🇬🇧 English</option>
+            <option value="fr">🇫🇷 Français</option>
+          </select>
+          {/* Theme Switcher */}
+          <button 
+            onClick={() => {
+              const next = theme === 'dark' ? 'light' : 'dark';
+              setTheme(next);
+              localStorage.setItem('nexus_theme', next);
+            }} 
+            className="btn btn-ghost" 
+            style={{ fontSize: 13, padding: '8px 16px', border: '1px solid var(--border)' }}
+          >
+            {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+          </button>
+        </header>
+
+        {/* Views Container */}
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          {view === 'dashboard'  && <Dashboard  key={viewKey} onNav={navigate} lang={lang} />}
+          {view === 'subjects'   && <SubjectsView  key={viewKey} onSelectSubject={goFlashcards} />}
+          {view === 'flashcards' && <FlashcardsView key={viewKey} initialSubjectId={fcSubject?.id} />}
+          {view === 'timer'      && <TimerView   key={viewKey} />}
+          {view === 'notes'      && <NotesView   key={viewKey} />}
+          {view === 'ai'         && <AIView      key={viewKey} />}
+          {view === 'roadmap'    && <RoadmapView key={viewKey} />}
+          {view === 'resources'  && <ResourcesView key={viewKey} />}
+          {view === 'snippets'   && <CodeSnippetsView key={viewKey} user={user} />}
+          {view === 'achievements'&& <AchievementsView key={viewKey} user={user} />}
+          {view === 'profile'    && <ProfileView key={viewKey} user={user} setUser={setUser} />}
+          {view === 'credits'    && <CreditsView key={viewKey} />}
+        </div>
       </main>
     </div>
   );
