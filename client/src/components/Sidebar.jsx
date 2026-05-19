@@ -17,9 +17,9 @@ const ITEMS = [
 ];
 
 const TRACKS = [
-  { name: '🎧 Lofi Chillhop', url: 'https://stream.zeno.fm/f3wvbbqmdg8uv' },
-  { name: '🎹 Classical Piano', url: 'http://stream.srg-ssr.ch/m/rsc_de/mp3_128' },
-  { name: '🌌 Ambient Synth', url: 'https://lofi.stream.laut.fm/lofi' }
+  { name: '🎧 Lofi Chillhop', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+  { name: '🎹 Classical Piano', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3' },
+  { name: '🌌 Ambient Synth', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' }
 ];
 
 export default function Sidebar({ active, onNav }) {
@@ -35,7 +35,7 @@ export default function Sidebar({ active, onNav }) {
       audioRef.current.pause();
     } else {
       audioRef.current.volume = volume;
-      audioRef.current.play();
+      audioRef.current.play().catch(err => console.error("Audio playback error: ", err));
     }
     setPlaying(!playing);
   };
@@ -55,10 +55,9 @@ export default function Sidebar({ active, onNav }) {
       audioRef.current.src = TRACKS[idx].url;
       audioRef.current.load();
       if (wasPlaying) {
-        // Wait for reload
         audioRef.current.oncanplay = () => {
           audioRef.current.volume = volume;
-          audioRef.current.play();
+          audioRef.current.play().catch(err => console.error("Audio autoplay error: ", err));
           audioRef.current.oncanplay = null;
         };
       }
@@ -88,15 +87,15 @@ export default function Sidebar({ active, onNav }) {
       <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 12, position: 'relative' }}>
         <audio ref={audioRef} loop src={TRACKS[trackIdx].url} />
         
-        {/* Toggle Panel Button */}
+        {/* Toggle Panel Button (Shows Settings Icon ⚙️) */}
         <button
           className="nav-item"
           onClick={() => setShowConsole(!showConsole)}
           title="Focus Music Console"
-          style={{ position: 'relative', margin: '4px 0' }}
+          style={{ position: 'relative', margin: '4px 0', border: showConsole ? '1px solid var(--cyan)' : '1px solid transparent' }}
         >
           {playing && <div style={{ position: 'absolute', inset: 0, background: 'var(--cyan)', opacity: 0.2, borderRadius: 12, animation: 'pulse 2s infinite' }} />}
-          <span style={{ fontSize: 20 }}>{playing ? '⏸' : '🎧'}</span>
+          <span style={{ fontSize: 20 }}>{playing ? '⏸' : '⚙️'}</span>
           <span className="nav-label">MUSIC</span>
         </button>
 
@@ -108,11 +107,14 @@ export default function Sidebar({ active, onNav }) {
             borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 12,
             boxShadow: '0 10px 30px rgba(0,0,0,0.5)', zIndex: 1000
           }}>
-            <div style={{ fontSize: 12, fontWeight: 'bold', color: 'var(--cyan)', letterSpacing: 1 }}>FOCUS PLAYER</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 12, fontWeight: 'bold', color: 'var(--cyan)', letterSpacing: 1 }}>FOCUS PLAYER</div>
+              <button onClick={() => setShowConsole(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 14 }}>✕</button>
+            </div>
             
             {/* Play/Pause */}
-            <button className="btn btn-cyan" onClick={toggleMusic} style={{ width: '100%', padding: '6px' }}>
-              {playing ? 'Pause Audio' : 'Play Audio'}
+            <button className={`btn ${playing ? 'btn-purple' : 'btn-cyan'}`} onClick={toggleMusic} style={{ width: '100%', padding: '6px' }}>
+              {playing ? 'Pause Audio ⏸' : 'Play Audio ▶'}
             </button>
 
             {/* Track Selector */}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 export default function ChillZoneView() {
-  const [game, setGame] = useState('menu'); // 'menu' | 'snake' | 'memory'
+  const [game, setGame] = useState('menu'); // 'menu' | 'snake' | 'memory' | 'flappy'
 
   return (
     <div className="view" style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
@@ -15,6 +15,7 @@ export default function ChillZoneView() {
         {game === 'menu' && <GameMenu onSelect={setGame} />}
         {game === 'snake' && <SnakeGame onBack={() => setGame('menu')} />}
         {game === 'memory' && <MemoryGame onBack={() => setGame('menu')} />}
+        {game === 'flappy' && <FlappyGame onBack={() => setGame('menu')} />}
       </div>
     </div>
   );
@@ -23,29 +24,41 @@ export default function ChillZoneView() {
 // ── GAME MENU ──
 function GameMenu({ onSelect }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, maxWidth: 800, width: '100%', padding: 20 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20, maxWidth: 900, width: '100%', padding: 20 }}>
       {/* Snake Card */}
       <div className="card" style={{ 
-        padding: 40, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
+        padding: 30, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
         background: 'linear-gradient(135deg, rgba(0,229,255,0.05), rgba(168,85,247,0.05))',
         border: '1px solid var(--border-hi)', cursor: 'pointer', transition: 'transform 0.2s'
       }} onClick={() => onSelect('snake')}>
-        <div style={{ fontSize: 64 }}>🐍</div>
-        <h2 style={{ color: 'var(--text-bright)', fontSize: 24, fontWeight: 800 }}>Neon Snake</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Navigate the retro snake, eat glowing node bytes, and reach the high score.</p>
-        <button className="btn btn-cyan" style={{ marginTop: 'auto' }}>Play Snake</button>
+        <div style={{ fontSize: 50 }}>🐍</div>
+        <h2 style={{ color: 'var(--text-bright)', fontSize: 20, fontWeight: 800 }}>Neon Snake</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13, flexGrow: 1 }}>Navigate the retro snake, eat glowing node bytes, and reach the high score.</p>
+        <button className="btn btn-cyan" style={{ marginTop: 'auto', width: '100%' }}>Play Snake</button>
       </div>
 
       {/* Memory Match Card */}
       <div className="card" style={{ 
-        padding: 40, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
+        padding: 30, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
         background: 'linear-gradient(135deg, rgba(168,85,247,0.05), rgba(0,229,255,0.05))',
         border: '1px solid var(--border-hi)', cursor: 'pointer', transition: 'transform 0.2s'
       }} onClick={() => onSelect('memory')}>
-        <div style={{ fontSize: 64 }}>🎴</div>
-        <h2 style={{ color: 'var(--text-bright)', fontSize: 24, fontWeight: 800 }}>Code Memory</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Flip cards and match the programming language icons in the shortest time.</p>
-        <button className="btn btn-purple" style={{ marginTop: 'auto' }}>Play Memory</button>
+        <div style={{ fontSize: 50 }}>🎴</div>
+        <h2 style={{ color: 'var(--text-bright)', fontSize: 20, fontWeight: 800 }}>Code Memory</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13, flexGrow: 1 }}>Flip cards and match the programming language icons in the shortest time.</p>
+        <button className="btn btn-purple" style={{ marginTop: 'auto', width: '100%' }}>Play Memory</button>
+      </div>
+
+      {/* Flappy Neon Card */}
+      <div className="card" style={{ 
+        padding: 30, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+        background: 'linear-gradient(135deg, rgba(0,229,255,0.05), rgba(168,85,247,0.05))',
+        border: '1px solid var(--border-hi)', cursor: 'pointer', transition: 'transform 0.2s'
+      }} onClick={() => onSelect('flappy')}>
+        <div style={{ fontSize: 50 }}>🚀</div>
+        <h2 style={{ color: 'var(--text-bright)', fontSize: 20, fontWeight: 800 }}>Flappy Neon</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: 13, flexGrow: 1 }}>Guide the glowing rocket vessel through high-voltage energy barriers.</p>
+        <button className="btn btn-cyan" style={{ marginTop: 'auto', width: '100%' }}>Play Flappy</button>
       </div>
     </div>
   );
@@ -98,44 +111,38 @@ function SnakeGame({ onBack }) {
       if (localGameOver) return;
       animationFrameId = requestAnimationFrame(loop);
 
-      if (++count < 6) { // Slow down to 10fps
+      if (++count < 6) {
         return;
       }
 
       count = 0;
       ctx.clearRect(0,0,canvas.width,canvas.height);
 
-      // Move snake
       snake.x += snake.dx;
       snake.y += snake.dy;
 
-      // Wrap snake position on edge
       if (snake.x < 0) snake.x = canvas.width - grid;
       else if (snake.x >= canvas.width) snake.x = 0;
       
       if (snake.y < 0) snake.y = canvas.height - grid;
       else if (snake.y >= canvas.height) snake.y = 0;
 
-      // Keep track of cells
       snake.cells.unshift({x: snake.x, y: snake.y});
 
       if (snake.cells.length > snake.maxCells) {
         snake.cells.pop();
       }
 
-      // Draw apple
       ctx.fillStyle = '#ff7043';
       ctx.shadowBlur = 15;
       ctx.shadowColor = '#ff7043';
       ctx.fillRect(apple.x + 2, apple.y + 2, grid - 4, grid - 4);
 
-      // Draw snake
       ctx.fillStyle = '#00e5ff';
       ctx.shadowColor = '#00e5ff';
       snake.cells.forEach(function(cell, index) {
         ctx.fillRect(cell.x + 1, cell.y + 1, grid - 2, grid - 2);
 
-        // Snake eats apple
         if (cell.x === apple.x && cell.y === apple.y) {
           snake.maxCells++;
           localScore += 10;
@@ -143,7 +150,6 @@ function SnakeGame({ onBack }) {
           resetApple();
         }
 
-        // Collision check
         for (let i = index + 1; i < snake.cells.length; i++) {
           if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
             localGameOver = true;
@@ -156,7 +162,7 @@ function SnakeGame({ onBack }) {
           }
         }
       });
-      ctx.shadowBlur = 0; // reset
+      ctx.shadowBlur = 0;
     }
 
     const handleKeyDown = (e) => {
@@ -276,6 +282,171 @@ function MemoryGame({ onBack }) {
           <h3 style={{ color: 'var(--green)', fontSize: 20, fontWeight: 'bold', marginBottom: 12 }}>🎉 You Won in {moves} Moves!</h3>
           <button className="btn btn-purple" onClick={initGame}>Play Again</button>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ── FLAPPY NEON GAME ──
+function FlappyGame({ onBack }) {
+  const canvasRef = useRef(null);
+  const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(() => Number(localStorage.getItem('flappy_highscore') || '0'));
+  const [gameOver, setGameOver] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    let rocket = {
+      y: 200,
+      velocity: 0,
+      gravity: 0.4,
+      jump: -7,
+      radius: 12
+    };
+
+    let pipes = [];
+    let pipeWidth = 40;
+    let pipeGap = 120;
+    let frames = 0;
+    let localScore = 0;
+    let localGameOver = false;
+
+    function reset() {
+      rocket.y = 200;
+      rocket.velocity = 0;
+      pipes = [];
+      frames = 0;
+      localScore = 0;
+      setScore(0);
+    }
+
+    let animationFrameId;
+
+    function loop() {
+      if (localGameOver) return;
+      animationFrameId = requestAnimationFrame(loop);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Rocket physics
+      rocket.velocity += rocket.gravity;
+      rocket.y += rocket.velocity;
+
+      // Draw Rocket
+      ctx.fillStyle = '#a855f7';
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = '#a855f7';
+      ctx.beginPath();
+      ctx.arc(100, rocket.y, rocket.radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Top/Bottom boundaries check
+      if (rocket.y - rocket.radius < 0 || rocket.y + rocket.radius > canvas.height) {
+        handleGameOver();
+      }
+
+      // Generate pipes
+      if (frames % 90 === 0) {
+        let topHeight = Math.random() * (canvas.height - pipeGap - 80) + 40;
+        pipes.push({
+          x: canvas.width,
+          top: topHeight,
+          bottom: canvas.height - topHeight - pipeGap,
+          passed: false
+        });
+      }
+
+      // Draw and move pipes
+      ctx.fillStyle = '#00e5ff';
+      ctx.shadowColor = '#00e5ff';
+      pipes.forEach((p, idx) => {
+        p.x -= 2.5;
+
+        // Draw top pipe
+        ctx.fillRect(p.x, 0, pipeWidth, p.top);
+        // Draw bottom pipe
+        ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
+
+        // Score tracking
+        if (!p.passed && p.x + pipeWidth < 100) {
+          p.passed = true;
+          localScore++;
+          setScore(localScore);
+        }
+
+        // Collision checking
+        if (
+          100 + rocket.radius > p.x &&
+          100 - rocket.radius < p.x + pipeWidth &&
+          (rocket.y - rocket.radius < p.top || rocket.y + rocket.radius > canvas.height - p.bottom)
+        ) {
+          handleGameOver();
+        }
+      });
+
+      // Remove offscreen pipes
+      pipes = pipes.filter(p => p.x + pipeWidth > 0);
+
+      frames++;
+      ctx.shadowBlur = 0;
+    }
+
+    function handleGameOver() {
+      localGameOver = true;
+      setGameOver(true);
+      setHighScore(h => {
+        const next = Math.max(h, localScore);
+        localStorage.setItem('flappy_highscore', next.toString());
+        return next;
+      });
+    }
+
+    const handleJump = () => {
+      rocket.velocity = rocket.jump;
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        handleJump();
+      }
+    };
+
+    canvas.addEventListener('click', handleJump);
+    window.addEventListener('keydown', handleKeyDown);
+    reset();
+    animationFrameId = requestAnimationFrame(loop);
+
+    return () => {
+      canvas.removeEventListener('click', handleJump);
+      window.removeEventListener('keydown', handleKeyDown);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [gameOver]);
+
+  return (
+    <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 30, maxWidth: 500, width: '100%', gap: 20 }}>
+      <div style={{ display: 'flex', justifySelf: 'stretch', width: '100%', justifyContent: 'space-between', alignItems: 'center' }}>
+        <button className="btn btn-ghost" onClick={onBack}>← Back</button>
+        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14 }}>
+          Score: <span style={{ color: 'var(--cyan)' }}>{score}</span> | High: {highScore}
+        </div>
+      </div>
+
+      <div style={{ border: '2px solid var(--border-hi)', borderRadius: 12, overflow: 'hidden', background: '#0b0f19', position: 'relative' }}>
+        <canvas ref={canvasRef} width={400} height={400} style={{ cursor: 'pointer' }} />
+      </div>
+
+      {gameOver ? (
+        <div style={{ textAlign: 'center' }}>
+          <h3 style={{ color: '#ff7043', fontSize: 20, fontWeight: 'bold', marginBottom: 12 }}>Game Over!</h3>
+          <button className="btn btn-cyan" onClick={() => setGameOver(false)}>Try Again</button>
+        </div>
+      ) : (
+        <p style={{ color: 'var(--text-muted)', fontSize: 12, textAlign: 'center' }}>Click the screen or tap SPACEBAR to flap up.</p>
       )}
     </div>
   );
