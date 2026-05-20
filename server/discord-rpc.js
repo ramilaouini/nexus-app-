@@ -38,7 +38,7 @@ function updatePresence(details, state) {
     details: details || 'Exploring Nexus',
     state: state || 'Studying & Grinding',
     startTimestamp,
-    largeImageKey: 'nexus',
+    largeImageKey: 'nexuss',
     largeImageText: 'Nexus App',
     instance: false,
   }).catch(console.error);
