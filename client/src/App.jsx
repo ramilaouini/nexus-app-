@@ -26,6 +26,7 @@ import BackpackView   from './views/BackpackView';
 import StatsView      from './views/StatsView';
 import LoungeView     from './views/LoungeView';
 import MapView        from './views/MapView';
+import CinemaView     from './views/CinemaView';
 import LofiView       from './views/LofiView';
 import { SONGS, PODCASTS, PLAYLISTS, ARTISTS } from './views/LofiData';
 
@@ -95,6 +96,23 @@ export default function App() {
     localStorage.setItem('nexus_user', JSON.stringify(u));
     setUser(u);
   };
+
+  useEffect(() => {
+    // Tell Discord what we are looking at
+    let details = 'Exploring Nexus';
+    if (view === 'dashboard') details = 'Viewing Dashboard';
+    if (view === 'subjects') details = 'Browsing Subjects';
+    if (view === 'flashcards') details = 'Reviewing Flashcards';
+    if (view === 'timer') details = 'Using the Timer';
+    if (view === 'chillzone') details = 'Chilling Out';
+    
+    fetch('/api/presence', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ details, state: 'Studying & Grinding' })
+    }).catch(err => console.log('Could not update Discord presence'));
+
+  }, [view]);
 
   useEffect(() => {
     const activeTheme = localStorage.getItem('active_theme') || 'default';
@@ -213,6 +231,7 @@ export default function App() {
           {view === 'stats'      && <StatsView key={viewKey} />}
           {view === 'lounge'     && <LoungeView key={viewKey} />}
           {view === 'map'        && <MapView key={viewKey} />}
+          {view === 'cinema'     && <CinemaView key={viewKey} />}
           {view === 'lofi'       && (
             <LofiView 
               key={viewKey}

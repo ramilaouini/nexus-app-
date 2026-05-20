@@ -23,6 +23,7 @@ const ITEMS = [
   { id: 'stats',        icon: '📈', label: 'STATS' },
   { id: 'lounge',       icon: '💬', label: 'LOUNGE' },
   { id: 'map',          icon: '🗺️', label: 'WORLD' },
+  { id: 'cinema',       icon: '🍿', label: 'THEATER' },
   { id: 'chill',        icon: '🕹️', label: 'CHILL' },
   { id: 'profile',      icon: '👤', label: 'USER'  },
   { id: 'credits',      icon: '✨', label: 'DEV'   },

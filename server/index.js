@@ -4,6 +4,12 @@ const cors    = require('cors');
 const path    = require('path');
 const fetch   = require('node-fetch');
 const { getDb, all, run, get } = require('./db');
+let discordRpc;
+try {
+  discordRpc = require('./discord-rpc');
+} catch (error) {
+  console.log("Discord RPC module not loaded: " + error.message);
+}
 
 const app = express();
 app.use(cors({ origin: ['http://localhost:5173','http://127.0.0.1:5173'] }));
@@ -12,6 +18,15 @@ app.use(express.json());
 let db;
 (async () => { db = await getDb(); })();
 const wait = (fn) => async (req, res, next) => { if (!db) db = await getDb(); fn(req,res,next); };
+
+// ─── DISCORD RPC ────────────────────────────────────────────────────────────
+app.post('/api/presence', (req, res) => {
+  if (discordRpc) {
+    const { details, state } = req.body;
+    discordRpc.updatePresence(details, state);
+  }
+  res.json({ success: true });
+});
 
 // ─── SUBJECTS ───────────────────────────────────────────────────────────────
 app.get('/api/subjects', wait((req,res) => {
