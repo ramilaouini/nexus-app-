@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Background3D   from './components/Background3D';
 import Sidebar        from './components/Sidebar';
 import Dashboard      from './views/Dashboard';
@@ -26,6 +26,8 @@ import BackpackView   from './views/BackpackView';
 import StatsView      from './views/StatsView';
 import LoungeView     from './views/LoungeView';
 import MapView        from './views/MapView';
+import LofiView       from './views/LofiView';
+import { SONGS, PODCASTS, PLAYLISTS, ARTISTS } from './views/LofiData';
 
 export default function App() {
   const [user, setUser]         = useState(() => JSON.parse(localStorage.getItem('nexus_user') || 'null'));
@@ -36,6 +38,58 @@ export default function App() {
   // Theme & Language State
   const [theme, setTheme]       = useState(() => localStorage.getItem('nexus_theme') || 'dark');
   const [lang, setLang]         = useState(() => localStorage.getItem('nexus_lang') || 'en');
+
+  // Lifted Audio State (Unified Track Object Model)
+  const [playing, setPlaying] = useState(false);
+  const [volume, setVolume] = useState(() => Number(localStorage.getItem('nexus_music_volume') || '0.25'));
+  const [currentTrack, setCurrentTrack] = useState(() => {
+    const savedId = localStorage.getItem('nexus_music_track_id');
+    return SONGS.find(s => s.id === savedId) || SONGS[0];
+  });
+  const audioRef = useRef(null);
+
+  const handlePlayToggle = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (playing) {
+      if (audioRef.current) audioRef.current.pause();
+      setPlaying(false);
+    } else {
+      if (audioRef.current) {
+        audioRef.current.volume = volume;
+        audioRef.current.play()
+          .then(() => setPlaying(true))
+          .catch(err => {
+            console.error("Audio playback error: ", err);
+            // Fallback load and play on failure
+            audioRef.current.load();
+            audioRef.current.play().then(() => setPlaying(true)).catch(e => console.error("Playback fallback failed: ", e));
+          });
+      }
+    }
+  };
+
+  const handleTrackChange = (track) => {
+    setCurrentTrack(track);
+    localStorage.setItem('nexus_music_track_id', track.id);
+    setPlaying(false);
+
+    setTimeout(() => {
+      if (audioRef.current) {
+        audioRef.current.volume = volume;
+        audioRef.current.load();
+        audioRef.current.play()
+          .then(() => setPlaying(true))
+          .catch(e => console.error("Failed to play selected track: ", e));
+      }
+    }, 50);
+  };
+
+  // Sync volume with audio tag
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
 
   const handleLogin = (u) => {
     localStorage.setItem('nexus_user', JSON.stringify(u));
@@ -72,6 +126,19 @@ export default function App() {
     setView(to);
     setViewKey(Date.now());
     if (to !== 'flashcards') setFcSubject(null);
+    if (to === 'lofi') {
+      if (!playing) {
+        setTimeout(() => {
+          if (audioRef.current) {
+            audioRef.current.volume = volume;
+            audioRef.current.load();
+            audioRef.current.play()
+              .then(() => setPlaying(true))
+              .catch(err => console.error("Autoplay on navigation failed: ", err));
+          }
+        }, 100);
+      }
+    }
   };
 
   const goFlashcards = (subject) => {
@@ -86,7 +153,8 @@ export default function App() {
     <div className={`app ${theme === 'light' ? 'light-theme' : ''}`}>
       <Background3D />
       <div className="grid-overlay" />
-      <Sidebar active={view} onNav={navigate} />
+      <audio ref={audioRef} loop src={currentTrack?.url} />
+      <Sidebar active={view} onNav={navigate} playing={playing} />
       
       <main className="main" style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100vh', overflow: 'hidden' }}>
         {/* Global Glass Header */}
@@ -145,6 +213,22 @@ export default function App() {
           {view === 'stats'      && <StatsView key={viewKey} />}
           {view === 'lounge'     && <LoungeView key={viewKey} />}
           {view === 'map'        && <MapView key={viewKey} />}
+          {view === 'lofi'       && (
+            <LofiView 
+              key={viewKey}
+              playing={playing}
+              setPlaying={setPlaying}
+              currentTrack={currentTrack}
+              handleTrackChange={handleTrackChange}
+              volume={volume}
+              setVolume={setVolume}
+              songs={SONGS}
+              podcasts={PODCASTS}
+              playlists={PLAYLISTS}
+              artists={ARTISTS}
+              handlePlayToggle={handlePlayToggle}
+            />
+          )}
         </div>
       </main>
     </div>

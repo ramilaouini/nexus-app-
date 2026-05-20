@@ -17,6 +17,10 @@ Nexus is a state-of-the-art, entirely self-hosted educational operating system. 
 - **Achievements Hub**: Unlock 12 beautifully designed badges like *Code Wizard*, *Deep Focus*, and *Grandmaster* by hitting learning milestones. 
 - **Activity Heatmaps**: Your dashboard visualizes your study sessions over the last 7 days with premium Area Charts and Bar Charts.
 
+### 🎧 Lo-Fi & Focus Mode
+- **Built-in Music Player**: Stay in the zone with an integrated lo-fi music, podcast, and radio player to accompany your study and coding sessions.
+- **High-Quality Audio**: Dynamic track metadata and reliable audio fetching for uninterrupted deep focus.
+
 ### 🔐 Secure & Persistent Profile
 - **Account Management**: Log in safely with an integrated authentication layer. 
 - **Custom Avatars**: Upload a custom profile picture directly to your user dashboard. 

@@ -11,12 +11,334 @@ const RADIUS = 105;
 const CIRC   = 2 * Math.PI * RADIUS; // 659.7
 
 const SOUNDSCAPES = [
-  { id: 'rain', name: '🌧️ Gentle Rain', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
-  { id: 'cafe', name: '☕ Parisian Café', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3' },
-  { id: 'forest', name: '🌲 Forest Birds', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
-  { id: 'space', name: '🛸 Space Drone', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3' },
-  { id: 'waves', name: '🌊 Ocean Waves', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3' }
+  { id: 'rain', name: '🌧️ Gentle Rain' },
+  { id: 'fireplace', name: '🔥 Cozy Fireplace' },
+  { id: 'waves', name: '🌊 Ocean Waves' },
+  { id: 'forest', name: '🌲 Forest & Birds' },
+  { id: 'space', name: '🛸 Space Drone' }
 ];
+
+// Caches for generated noise buffers
+let cachedWhiteNoiseBuffer = null;
+let cachedPinkNoiseBuffer = null;
+let cachedBrownNoiseBuffer = null;
+
+const getWhiteNoiseBuffer = (ctx) => {
+  if (cachedWhiteNoiseBuffer) return cachedWhiteNoiseBuffer;
+  const bufferSize = 2 * ctx.sampleRate;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = Math.random() * 2 - 1;
+  }
+  cachedWhiteNoiseBuffer = buffer;
+  return buffer;
+};
+
+const getPinkNoiseBuffer = (ctx) => {
+  if (cachedPinkNoiseBuffer) return cachedPinkNoiseBuffer;
+  const bufferSize = 2 * ctx.sampleRate;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+  for (let i = 0; i < bufferSize; i++) {
+    const white = Math.random() * 2 - 1;
+    b0 = 0.99886 * b0 + white * 0.0555179;
+    b1 = 0.99332 * b1 + white * 0.0750759;
+    b2 = 0.96900 * b2 + white * 0.1538520;
+    b3 = 0.86650 * b3 + white * 0.3104856;
+    b4 = 0.55000 * b4 + white * 0.5329522;
+    b5 = -0.7616 * b5 - white * 0.0168980;
+    data[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+    data[i] *= 0.11; // normalise volume
+    b6 = white * 0.115926;
+  }
+  cachedPinkNoiseBuffer = buffer;
+  return buffer;
+};
+
+const getBrownNoiseBuffer = (ctx) => {
+  if (cachedBrownNoiseBuffer) return cachedBrownNoiseBuffer;
+  const bufferSize = 2 * ctx.sampleRate;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  let lastOut = 0.0;
+  for (let i = 0; i < bufferSize; i++) {
+    const white = Math.random() * 2 - 1;
+    data[i] = (lastOut + (0.02 * white)) / 1.02;
+    lastOut = data[i];
+    data[i] *= 3.5; // normalise volume
+  }
+  cachedBrownNoiseBuffer = buffer;
+  return buffer;
+};
+
+const triggerCrackle = (ctx, destination) => {
+  if (!ctx || ctx.state === 'suspended') return;
+  const source = ctx.createBufferSource();
+  source.buffer = getWhiteNoiseBuffer(ctx);
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.value = 7500;
+
+  const gain = ctx.createGain();
+  const now = ctx.currentTime;
+  gain.gain.setValueAtTime(0.012 * (Math.random() * 0.8 + 0.2), now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.008 + Math.random() * 0.02);
+
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(destination);
+  source.start(now);
+  source.stop(now + 0.05);
+};
+
+const triggerBirdChirp = (ctx, destination) => {
+  if (!ctx || ctx.state === 'suspended') return;
+  const now = ctx.currentTime;
+  const chirpCount = Math.random() > 0.5 ? 2 : 1;
+  let startTime = now;
+
+  for (let i = 0; i < chirpCount; i++) {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+
+    const baseFreq = 2200 + Math.random() * 1200;
+    osc.frequency.setValueAtTime(baseFreq, startTime);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, startTime + 0.06);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.85, startTime + 0.13);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(0.015, startTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.13);
+
+    osc.connect(gain);
+    gain.connect(destination);
+    osc.start(startTime);
+    osc.stop(startTime + 0.15);
+
+    startTime += 0.18 + Math.random() * 0.1;
+  }
+};
+
+const startSynth = (soundId, ctx) => {
+  const mainGain = ctx.createGain();
+  mainGain.gain.value = 0; // set by handleVolumeChange
+  mainGain.connect(ctx.destination);
+
+  if (soundId === 'rain') {
+    const source = ctx.createBufferSource();
+    source.buffer = getPinkNoiseBuffer(ctx);
+    source.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 1100;
+
+    source.connect(filter);
+    filter.connect(mainGain);
+    source.start(0);
+
+    return { source, filter, gainNode: mainGain };
+  }
+
+  if (soundId === 'fireplace') {
+    // Low rumble
+    const source = ctx.createBufferSource();
+    source.buffer = getBrownNoiseBuffer(ctx);
+    source.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 180;
+
+    source.connect(filter);
+    filter.connect(mainGain);
+    source.start(0);
+
+    // Crackle trigger loop
+    const crackleInterval = setInterval(() => {
+      if (Math.random() < 0.35) {
+        triggerCrackle(ctx, mainGain);
+      }
+    }, 110);
+
+    return { source, filter, gainNode: mainGain, interval: crackleInterval };
+  }
+
+  if (soundId === 'waves') {
+    const source = ctx.createBufferSource();
+    source.buffer = getPinkNoiseBuffer(ctx);
+    source.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 350;
+
+    const waveGain = ctx.createGain();
+    waveGain.gain.value = 0.5;
+
+    source.connect(filter);
+    filter.connect(waveGain);
+    waveGain.connect(mainGain);
+    source.start(0);
+
+    // Filter sweep LFO
+    const filterLfo = ctx.createOscillator();
+    filterLfo.frequency.value = 0.1; 
+    const filterLfoGain = ctx.createGain();
+    filterLfoGain.gain.value = 200; 
+    filterLfo.connect(filterLfoGain);
+    filterLfoGain.connect(filter.frequency);
+    filterLfo.start(0);
+
+    // Volume sweep LFO
+    const volLfo = ctx.createOscillator();
+    volLfo.frequency.value = 0.1;
+    const volLfoGain = ctx.createGain();
+    volLfoGain.gain.value = 0.35; 
+    volLfo.connect(volLfoGain);
+    volLfoGain.connect(waveGain.gain);
+    volLfo.start(0);
+
+    return { 
+      source, 
+      filter, 
+      gainNode: mainGain, 
+      oscillators: [filterLfo, volLfo], 
+      childNodes: [waveGain, filterLfoGain, volLfoGain] 
+    };
+  }
+
+  if (soundId === 'forest') {
+    const source = ctx.createBufferSource();
+    source.buffer = getPinkNoiseBuffer(ctx);
+    source.loop = true;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.value = 1.0;
+    filter.frequency.value = 500;
+
+    source.connect(filter);
+    filter.connect(mainGain);
+    source.start(0);
+
+    // Wind modulation
+    const windLfo = ctx.createOscillator();
+    windLfo.frequency.value = 0.07;
+    const windLfoGain = ctx.createGain();
+    windLfoGain.gain.value = 220;
+    windLfo.connect(windLfoGain);
+    windLfoGain.connect(filter.frequency);
+    windLfo.start(0);
+
+    // Bird chirping
+    const birdInterval = setInterval(() => {
+      if (Math.random() < 0.22) {
+        triggerBirdChirp(ctx, mainGain);
+      }
+    }, 2000);
+
+    return { 
+      source, 
+      filter, 
+      gainNode: mainGain, 
+      oscillators: [windLfo], 
+      childNodes: [windLfoGain], 
+      interval: birdInterval 
+    };
+  }
+
+  if (soundId === 'space') {
+    const osc1 = ctx.createOscillator();
+    osc1.type = 'sine';
+    osc1.frequency.value = 65;
+
+    const osc2 = ctx.createOscillator();
+    osc2.type = 'triangle';
+    osc2.frequency.value = 97.8;
+
+    const osc3 = ctx.createOscillator();
+    osc3.type = 'sine';
+    osc3.frequency.value = 130.5;
+
+    const noiseSource = ctx.createBufferSource();
+    noiseSource.buffer = getBrownNoiseBuffer(ctx);
+    noiseSource.loop = true;
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'lowpass';
+    noiseFilter.frequency.value = 80;
+
+    const droneFilter = ctx.createBiquadFilter();
+    droneFilter.type = 'lowpass';
+    droneFilter.frequency.value = 180;
+
+    // Cosmic sweep LFO
+    const sweepLfo = ctx.createOscillator();
+    sweepLfo.frequency.value = 0.04; 
+    const sweepGain = ctx.createGain();
+    sweepGain.gain.value = 25;
+    sweepLfo.connect(sweepGain);
+    sweepGain.connect(droneFilter.frequency);
+    sweepLfo.start(0);
+
+    osc1.connect(droneFilter);
+    osc2.connect(droneFilter);
+    osc3.connect(droneFilter);
+    noiseSource.connect(noiseFilter);
+
+    droneFilter.connect(mainGain);
+    noiseFilter.connect(mainGain);
+
+    osc1.start(0);
+    osc2.start(0);
+    osc3.start(0);
+    noiseSource.start(0);
+
+    return { 
+      oscillators: [osc1, osc2, osc3, sweepLfo], 
+      source: noiseSource, 
+      gainNode: mainGain, 
+      childNodes: [noiseFilter, droneFilter, sweepGain] 
+    };
+  }
+
+  return { gainNode: mainGain };
+};
+
+const stopSynth = (synth) => {
+  try {
+    if (synth.source) {
+      synth.source.stop();
+      synth.source.disconnect();
+    }
+    if (synth.oscillators) {
+      synth.oscillators.forEach(osc => {
+        try { osc.stop(); } catch(e){}
+        try { osc.disconnect(); } catch(e){}
+      });
+    }
+    if (synth.childNodes) {
+      synth.childNodes.forEach(node => {
+        try { node.disconnect(); } catch(e){}
+      });
+    }
+    if (synth.filter) {
+      synth.filter.disconnect();
+    }
+    if (synth.gainNode) {
+      synth.gainNode.disconnect();
+    }
+    if (synth.interval) {
+      clearInterval(synth.interval);
+    }
+  } catch(e) {
+    console.error("Error stopping synthesizer: ", e);
+  }
+};
 
 export default function TimerView() {
   const [modeKey,   setModeKey]   = useState('focus');
@@ -29,28 +351,36 @@ export default function TimerView() {
   const [pulse,     setPulse]     = useState(false);
   const intervalRef = useRef(null);
 
-  // Soundscape audio elements
-  const audioRefs = useRef({});
+  // Soundscape audio and synthesizer contexts
+  const audioCtxRef = useRef(null);
+  const synthsRef = useRef({
+    rain: null,
+    fireplace: null,
+    waves: null,
+    forest: null,
+    space: null
+  });
+
   const [soundVolumes, setSoundVolumes] = useState({
     rain: 0,
-    cafe: 0,
+    fireplace: 0,
+    waves: 0,
     forest: 0,
-    space: 0,
-    waves: 0
+    space: 0
   });
 
   useEffect(() => {
     api.subjects.list().then(setSubjects).catch(() => {});
     api.sessions.list().then(setHistory).catch(() => {});
 
-    // Clean up soundscapes on unmount
+    // Clean up synthesizers on unmount
     return () => {
-      Object.values(audioRefs.current).forEach(audio => {
-        if (audio) {
-          audio.pause();
-          audio.src = '';
-        }
+      Object.values(synthsRef.current).forEach(synth => {
+        if (synth) stopSynth(synth);
       });
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close().catch(() => {});
+      }
     };
   }, []);
 
@@ -113,24 +443,37 @@ export default function TimerView() {
     setTimeLeft(mode.duration);
   };
 
+  const getAudioContext = () => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
+    return audioCtxRef.current;
+  };
+
   const handleVolumeChange = (soundId, volume) => {
     setSoundVolumes(prev => ({ ...prev, [soundId]: volume }));
     
-    let audio = audioRefs.current[soundId];
-    if (!audio) {
-      const match = SOUNDSCAPES.find(s => s.id === soundId);
-      audio = new Audio(match.url);
-      audio.loop = true;
-      audioRefs.current[soundId] = audio;
-    }
+    const ctx = getAudioContext();
+    let synth = synthsRef.current[soundId];
 
     if (volume === 0) {
-      audio.pause();
-    } else {
-      audio.volume = volume;
-      if (audio.paused) {
-        audio.play().catch(err => console.error("Soundscape playback error: ", err));
+      if (synth) {
+        stopSynth(synth);
+        synthsRef.current[soundId] = null;
       }
+      return;
+    }
+
+    if (!synth) {
+      synth = startSynth(soundId, ctx);
+      synthsRef.current[soundId] = synth;
+    }
+
+    if (synth && synth.gainNode) {
+      synth.gainNode.gain.setTargetAtTime(volume, ctx.currentTime, 0.05);
     }
   };
 
