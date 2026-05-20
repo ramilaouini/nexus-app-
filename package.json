@@ -7,6 +7,7 @@
     "start": "node server/index.js"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.3",
     "cors": "^2.8.5",
     "discord-rpc": "^4.0.1",
     "dotenv": "^16.4.5",
