@@ -189,16 +189,23 @@ export default function Sidebar({ active, onNav, playing }) {
           '--drawer-accent-glow': activeWorkspace?.accentGlow
         }}
       >
+        {/* Absolute ambient dynamic glows */}
+        <div className="drawer-glow-blob" />
+        <div className="drawer-glow-blob-2" />
+        
         {activeWorkspace && (
           <>
             <div className="drawer-header">
-              <span className="drawer-title">{activeWorkspace.label}</span>
+              <span className="drawer-title">
+                <span className="title-glow-dot" />
+                {activeWorkspace.label}
+              </span>
               <button 
                 className={`drawer-pin-btn${isPinned ? ' pinned' : ''}`}
                 onClick={togglePin}
                 title={isPinned ? "Unpin Drawer" : "Pin Drawer Open"}
               >
-                📌
+                <span className="pin-icon">📌</span>
               </button>
             </div>
 
@@ -210,7 +217,7 @@ export default function Sidebar({ active, onNav, playing }) {
                     key={item.id}
                     className="stagger-item drawer-item"
                     style={{
-                      animationDelay: `${idx * 0.04}s`,
+                      animationDelay: `${idx * 0.035}s`,
                       borderWidth: isActive ? '1.5px' : '1px',
                       background: isActive ? activeWorkspace.accentDim : 'rgba(255, 255, 255, 0.01)',
                       borderColor: isActive ? activeWorkspace.accentColor : 'var(--border)',
@@ -218,19 +225,26 @@ export default function Sidebar({ active, onNav, playing }) {
                     }}
                     onClick={() => onNav(item.id)}
                   >
-                    <span className="drawer-item-icon">
-                      {item.id === 'lofi' && playing ? (
-                        <div className="music-bar-container">
-                          <div className="music-bar music-bar-active" />
-                          <div className="music-bar music-bar-active" />
-                          <div className="music-bar music-bar-active" />
-                          <div className="music-bar music-bar-active" />
-                        </div>
-                      ) : (
-                        item.icon
-                      )}
+                    <div className="drawer-item-icon-wrapper">
+                      <span className="drawer-item-icon">
+                        {item.id === 'lofi' && playing ? (
+                          <div className="music-bar-container">
+                            <div className="music-bar music-bar-active" />
+                            <div className="music-bar music-bar-active" />
+                            <div className="music-bar music-bar-active" />
+                            <div className="music-bar music-bar-active" />
+                          </div>
+                        ) : (
+                          item.icon
+                        )}
+                      </span>
+                      <div className="icon-glow-ring" />
+                    </div>
+                    <span className="drawer-item-label">
+                      <span className="label-bracket">[</span>
+                      {item.label}
+                      <span className="label-bracket">]</span>
                     </span>
-                    <span className="drawer-item-label">{item.label}</span>
                   </div>
                 );
               })}
