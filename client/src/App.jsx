@@ -28,6 +28,10 @@ import LoungeView     from './views/LoungeView';
 import MapView        from './views/MapView';
 import CinemaView     from './views/CinemaView';
 import LofiView       from './views/LofiView';
+import SpacesView     from './views/SpacesView';
+import MarketView     from './views/MarketView';
+import LogView        from './views/LogView';
+import MiniGuide      from './components/MiniGuide';
 import { SONGS, PODCASTS, PLAYLISTS, ARTISTS } from './views/LofiData';
 
 export default function App() {
@@ -39,6 +43,15 @@ export default function App() {
   // Theme & Language State
   const [theme, setTheme]       = useState(() => localStorage.getItem('nexus_theme') || 'dark');
   const [lang, setLang]         = useState(() => localStorage.getItem('nexus_lang') || 'en');
+
+  // Game Economy & Character State
+  const [coins, setCoins] = useState(() => Number(localStorage.getItem('nexus_coins') || '12450'));
+  const [inventory, setInventory] = useState(() => JSON.parse(localStorage.getItem('nexus_inventory') || '[]'));
+  const [equipped, setEquipped] = useState(() => JSON.parse(localStorage.getItem('nexus_equipped') || '{"skin":null,"item":null,"backpack":null}'));
+
+  useEffect(() => localStorage.setItem('nexus_coins', coins.toString()), [coins]);
+  useEffect(() => localStorage.setItem('nexus_inventory', JSON.stringify(inventory)), [inventory]);
+  useEffect(() => localStorage.setItem('nexus_equipped', JSON.stringify(equipped)), [equipped]);
 
   // Lifted Audio State (Unified Track Object Model)
   const [playing, setPlaying] = useState(false);
@@ -173,6 +186,7 @@ export default function App() {
       <div className="grid-overlay" />
       <audio ref={audioRef} loop src={currentTrack?.url} />
       <Sidebar active={view} onNav={navigate} playing={playing} />
+      <MiniGuide equipped={equipped} />
       
       <main className="main" style={{ display: 'flex', flexDirection: 'column', flex: 1, height: '100vh', overflow: 'hidden' }}>
         {/* Global Glass Header */}
@@ -232,6 +246,9 @@ export default function App() {
           {view === 'lounge'     && <LoungeView key={viewKey} />}
           {view === 'map'        && <MapView key={viewKey} />}
           {view === 'cinema'     && <CinemaView key={viewKey} />}
+          {view === 'spaces'     && <SpacesView key={viewKey} />}
+          {view === 'market'     && <MarketView key={viewKey} coins={coins} setCoins={setCoins} inventory={inventory} setInventory={setInventory} equipped={equipped} setEquipped={setEquipped} />}
+          {view === 'log'        && <LogView key={viewKey} />}
           {view === 'lofi'       && (
             <LofiView 
               key={viewKey}

@@ -15,8 +15,9 @@ const WORKSPACES = [
       { id: 'quiz',         icon: '📝', label: 'QUIZ'  },
       { id: 'timer',        icon: '◎', label: 'FOCUS' },
       { id: 'notes',        icon: '≡', label: 'NOTES' },
+      { id: 'log',          icon: '📖', label: 'LOG'   },
       { id: 'goal',         icon: '📊', label: 'GOAL'  },
-      { id: 'sched',        icon: '⏰', label: 'SCHED'  },
+      { id: 'sched',        icon: '⏰', label: 'SCHED' },
       { id: 'stats',        icon: '📈', label: 'STATS' },
     ]
   },
@@ -29,10 +30,12 @@ const WORKSPACES = [
     accentGlow: 'rgba(168, 85, 247, 0.35)',
     items: [
       { id: 'lounge',       icon: '💬', label: 'LOUNGE' },
+      { id: 'spaces',       icon: '🌌', label: 'SPACES' },
       { id: 'map',          icon: '🗺️', label: 'WORLD' },
       { id: 'maps',         icon: '📍', label: 'MAPS' },
       { id: 'duel',         icon: '⚔️', label: 'DUEL'  },
       { id: 'ship',         icon: '🚀', label: 'SHIP'  },
+      { id: 'market',       icon: '🏪', label: 'MARKET' },
       { id: 'backpack',     icon: '🎒', label: 'PACK' },
     ]
   },
@@ -60,6 +63,10 @@ export default function Sidebar({ active, onNav, playing }) {
   const [hoveredWorkspace, setHoveredWorkspace] = useState(null);
   const [pinnedWorkspace, setPinnedWorkspace] = useState(null);
   const [isPinned, setIsPinned] = useState(() => localStorage.getItem('nexus_sidebar_pinned') === 'true');
+  
+  // Cyber Zen Focus Breathing states
+  const [zenActive, setZenActive] = useState(false);
+  const [breathSec, setBreathSec] = useState(0);
 
   const getWorkspaceForView = (viewId) => {
     return WORKSPACES.find(ws => ws.items.some(item => item.id === viewId));
@@ -72,6 +79,34 @@ export default function Sidebar({ active, onNav, playing }) {
       setPinnedWorkspace(currentWs);
     }
   }, [active]);
+
+  // Zen Breathing 16s cycle interval (Inhale 4s -> Hold 4s -> Exhale 4s -> Hold 4s)
+  useEffect(() => {
+    if (!zenActive) {
+      setBreathSec(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setBreathSec(prev => (prev + 1) % 16);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [zenActive]);
+
+  const getBreathLabel = () => {
+    if (!zenActive) return 'ZEN';
+    if (breathSec < 4) return 'INHALE';
+    if (breathSec < 8) return 'HOLD';
+    if (breathSec < 12) return 'EXHALE';
+    return 'REST';
+  };
+
+  const getBreathColor = () => {
+    if (!zenActive) return 'var(--cyan)';
+    if (breathSec < 4) return '#00e5ff'; // Cyan
+    if (breathSec < 8) return '#a855f7'; // Purple
+    if (breathSec < 12) return '#f59e0b'; // Amber
+    return '#8b5cf6'; // Violet
+  };
 
   const togglePin = () => {
     const nextPin = !isPinned;
@@ -165,8 +200,6 @@ export default function Sidebar({ active, onNav, playing }) {
           <span style={{ fontSize: 20 }}>👤</span>
           <span className="nav-label">USER</span>
         </button>
-
-        <div style={{ flex: 1, minHeight: 20 }} />
 
         {/* LOGOUT */}
         <button
