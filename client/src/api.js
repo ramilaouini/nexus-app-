@@ -1,14 +1,31 @@
 const BASE = '/api';
 
+function getUserId() {
+  try {
+    const u = JSON.parse(localStorage.getItem('nexus_user') || 'null');
+    return u?.id || null;
+  } catch { return null; }
+}
+
 async function req(path, opts = {}) {
+  const userId = getUserId();
+  const headers = { 'Content-Type': 'application/json', ...opts.headers };
+  if (userId) headers['X-User-Id'] = String(userId);
+
   const r = await fetch(BASE + path, {
-    headers: { 'Content-Type': 'application/json' },
     ...opts,
+    headers,
     body: opts.body ? JSON.stringify(opts.body) : undefined
   });
   if (!r.ok) {
-    const e = await r.json().catch(() => ({ error: r.statusText }));
-    throw new Error(e.error || r.statusText);
+    let errorMsg = `HTTP Error ${r.status}`;
+    try {
+      const e = await r.json();
+      if (e && e.error) errorMsg = e.error;
+    } catch {
+      if (r.statusText) errorMsg = `${r.statusText} (${r.status})`;
+    }
+    throw new Error(errorMsg);
   }
   return r.json();
 }

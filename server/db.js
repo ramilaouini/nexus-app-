@@ -36,6 +36,7 @@ async function initSchema() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL, icon TEXT DEFAULT '📚', color TEXT DEFAULT '#00e5ff',
       category TEXT DEFAULT 'General', description TEXT DEFAULT '',
+      user_id INTEGER,
       created_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS flashcards (
@@ -49,11 +50,13 @@ async function initSchema() {
     CREATE TABLE IF NOT EXISTS sessions (
       id INTEGER PRIMARY KEY AUTOINCREMENT, subject_id INTEGER,
       duration INTEGER DEFAULT 25, mode TEXT DEFAULT 'focus',
+      user_id INTEGER,
       completed_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS notes (
       id INTEGER PRIMARY KEY AUTOINCREMENT, subject_id INTEGER,
       title TEXT NOT NULL, content TEXT DEFAULT '',
+      user_id INTEGER,
       created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now'))
     );
     CREATE TABLE IF NOT EXISTS users (
@@ -78,6 +81,12 @@ async function initSchema() {
       UNIQUE(user_id, badge_id)
     );
   `);
+
+  // Migrations for existing databases
+  try { await run('ALTER TABLE subjects ADD COLUMN user_id INTEGER'); } catch(e) { /* already exists */ }
+  try { await run('ALTER TABLE sessions ADD COLUMN user_id INTEGER'); } catch(e) { /* already exists */ }
+  try { await run('ALTER TABLE notes ADD COLUMN user_id INTEGER'); } catch(e) { /* already exists */ }
+  try { await run('ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ""'); } catch(e) { /* already exists */ }
 
   const subjectsCount = await get('SELECT COUNT(*) as c FROM subjects');
   if (subjectsCount.c === 0) {
@@ -133,8 +142,6 @@ async function initSchema() {
       }
     }
   }
-
-  try { await run('ALTER TABLE users ADD COLUMN avatar TEXT DEFAULT ""'); } catch(e) { /* already exists */ }
 }
 
 module.exports = { getDb, all, run, get };

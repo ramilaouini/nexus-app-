@@ -64,9 +64,14 @@ export default function ProfileView({ user, setUser }) {
     } catch(err) { setMsg('Error: ' + err.message); }
   };
 
-  const handleAvatarUpload = async (e) => {
-    const file = e.target.files[0];
+  const [isDragging, setIsDragging] = useState(false);
+
+  const uploadFile = (file) => {
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setMsg('Error: Only images are allowed.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const b64 = ev.target.result;
@@ -79,6 +84,27 @@ export default function ProfileView({ user, setUser }) {
       } catch(err) { setMsg('Error: ' + err.message); }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleAvatarUpload = (e) => {
+    uploadFile(e.target.files[0]);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      uploadFile(e.dataTransfer.files[0]);
+    }
   };
 
   const buyBadge = (b) => {
@@ -251,17 +277,40 @@ export default function ProfileView({ user, setUser }) {
           
           {/* Avatar & Badges display */}
           <div className="card animate-fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: 24, gap: 16 }}>
-            <div style={{
-              width: 100, height: 100, borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--cyan)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: 'pointer',
-              boxShadow: '0 0 20px rgba(0, 229, 255, 0.2)'
-            }} onClick={() => fileRef.current.click()}>
-              {user.avatar ? <img src={user.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 32 }}>👤</span>}
+            <div 
+              style={{
+                width: 100, height: 100, borderRadius: '50%', background: 'var(--surface)',
+                border: isDragging ? '3px dashed var(--cyan)' : '2px solid var(--cyan)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: 'pointer',
+                boxShadow: isDragging ? '0 0 35px rgba(0, 229, 255, 0.7)' : '0 0 20px rgba(0, 229, 255, 0.2)',
+                transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: isDragging ? 'scale(1.08)' : 'scale(1)',
+                position: 'relative'
+              }} 
+              onClick={() => fileRef.current.click()}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              {user.avatar ? (
+                <img src={user.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ fontSize: 32 }}>👤</span>
+              )}
+              {isDragging && (
+                <div style={{
+                  position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', 
+                  background: 'rgba(0, 229, 255, 0.25)', backdropFilter: 'blur(2px)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24
+                }}>
+                  📥
+                </div>
+              )}
             </div>
             
             <div>
               <h2 style={{ fontSize: 20, color: 'var(--text-bright)', textTransform: 'capitalize', fontWeight: 'bold' }}>{user.username}</h2>
-              <p style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 4 }}>Click avatar to upload new image.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: 11, marginTop: 4 }}>Click or drag & drop to upload new image.</p>
               <input type="file" ref={fileRef} style={{ display: 'none' }} accept="image/*" onChange={handleAvatarUpload} />
             </div>
 

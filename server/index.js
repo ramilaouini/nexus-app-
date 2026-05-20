@@ -13,7 +13,8 @@ try {
 
 const app = express();
 app.use(cors({ origin: ['http://localhost:5173','http://127.0.0.1:5173'] }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 let db;
 (async () => { db = await getDb(); })();
@@ -37,6 +38,7 @@ app.post('/api/presence', (req, res) => {
 
 // ─── SUBJECTS ───────────────────────────────────────────────────────────────
 app.get('/api/subjects', wait(async (req,res) => {
+  const userId = req.headers['x-user-id'] || null;
   const rows = await all(`
     SELECT s.*, COUNT(DISTINCT f.id) as card_count, COUNT(DISTINCT n.id) as note_count,
       COALESCE(SUM(se.duration),0) as total_minutes,
@@ -46,62 +48,75 @@ app.get('/api/subjects', wait(async (req,res) => {
         ELSE 0 END, 0) as accuracy
     FROM subjects s
     LEFT JOIN flashcards f ON f.subject_id=s.id
-    LEFT JOIN notes n ON n.subject_id=s.id
-    LEFT JOIN sessions se ON se.subject_id=s.id
+    LEFT JOIN notes n ON n.subject_id=s.id AND (n.user_id = ? OR n.user_id IS NULL)
+    LEFT JOIN sessions se ON se.subject_id=s.id AND (se.user_id = ? OR se.user_id IS NULL)
+    WHERE s.user_id = ? OR s.user_id IS NULL
     GROUP BY s.id ORDER BY s.created_at DESC
-  `);
+  `, [userId, userId, userId]);
   res.json(rows);
 }));
 
 app.post('/api/subjects', wait(async (req,res) => {
+  const userId = req.headers['x-user-id'] || null;
   const { name, icon='📚', color='#00e5ff', category='General', description='' } = req.body;
   if (!name) return res.status(400).json({ error:'name required' });
-  const { lastInsertRowid: id } = await run(`INSERT INTO subjects (name,icon,color,category,description) VALUES (?,?,?,?,?)`,[name,icon,color,category,description]);
+  const { lastInsertRowid: id } = await run(`INSERT INTO subjects (name,icon,color,category,description,user_id) VALUES (?,?,?,?,?,?)`,[name,icon,color,category,description,userId]);
   res.status(201).json({ ...(await get('SELECT * FROM subjects WHERE id=?',[id])), card_count:0, note_count:0, total_minutes:0, accuracy:0 });
 }));
 
 app.put('/api/subjects/:id', wait(async (req,res) => {
+  const userId = req.headers['x-user-id'] || null;
   const { name, icon, color, category, description } = req.body;
-  await run(`UPDATE subjects SET name=?,icon=?,color=?,category=?,description=? WHERE id=?`,[name,icon,color,category,description,req.params.id]);
+  await run(`UPDATE subjects SET name=?,icon=?,color=?,category=?,description=? WHERE id=? AND (user_id=? OR user_id IS NULL)`,[name,icon,color,category,description,req.params.id,userId]);
   res.json({ success:true });
 }));
 
 app.delete('/api/subjects/:id', wait(async (req,res) => {
-  await run('DELETE FROM flashcards WHERE subject_id=?',[req.params.id]);
-  await run('DELETE FROM notes WHERE subject_id=?',[req.params.id]);
-  await run('DELETE FROM subjects WHERE id=?',[req.params.id]);
+  const userId = req.headers['x-user-id'] || null;
+  await run('DELETE FROM flashcards WHERE subject_id IN (SELECT id FROM subjects WHERE id=? AND (user_id=? OR user_id IS NULL))',[req.params.id,userId]);
+  await run('DELETE FROM notes WHERE subject_id IN (SELECT id FROM subjects WHERE id=? AND (user_id=? OR user_id IS NULL))',[req.params.id,userId]);
+  await run('DELETE FROM subjects WHERE id=? AND (user_id=? OR user_id IS NULL)',[req.params.id,userId]);
   res.json({ success:true });
 }));
 
 // ─── FLASHCARDS ─────────────────────────────────────────────────────────────
 app.get('/api/flashcards', wait(async (req,res) => {
+  const userId = req.headers['x-user-id'] || null;
   const { subject_id } = req.query;
-  res.json(subject_id
-    ? await all('SELECT * FROM flashcards WHERE subject_id=? ORDER BY created_at DESC',[+subject_id])
-    : await all('SELECT * FROM flashcards ORDER BY created_at DESC'));
+  if (subject_id) {
+    res.json(await all('SELECT f.* FROM flashcards f JOIN subjects s ON f.subject_id=s.id WHERE f.subject_id=? AND (s.user_id=? OR s.user_id IS NULL) ORDER BY f.created_at DESC',[+subject_id,userId]));
+  } else {
+    res.json(await all('SELECT f.* FROM flashcards f JOIN subjects s ON f.subject_id=s.id WHERE s.user_id=? OR s.user_id IS NULL ORDER BY f.created_at DESC',[userId]));
+  }
 }));
 
 app.post('/api/flashcards', wait(async (req,res) => {
+  const userId = req.headers['x-user-id'] || null;
   const { subject_id, front, back } = req.body;
   if (!subject_id||!front||!back) return res.status(400).json({ error:'subject_id,front,back required' });
+  const subject = await get('SELECT id FROM subjects WHERE id=? AND (user_id=? OR user_id IS NULL)',[+subject_id,userId]);
+  if (!subject) return res.status(403).json({ error:'Access denied to subject' });
   const { lastInsertRowid: id } = await run(`INSERT INTO flashcards (subject_id,front,back) VALUES (?,?,?)`,[+subject_id,front,back]);
   res.status(201).json(await get('SELECT * FROM flashcards WHERE id=?',[id]));
 }));
 
 app.put('/api/flashcards/:id', wait(async (req,res) => {
+  const userId = req.headers['x-user-id'] || null;
   const { front, back } = req.body;
-  await run('UPDATE flashcards SET front=?,back=? WHERE id=?',[front,back,req.params.id]);
+  await run('UPDATE flashcards SET front=?,back=? WHERE id=? AND subject_id IN (SELECT id FROM subjects WHERE user_id=? OR user_id IS NULL)',[front,back,req.params.id,userId]);
   res.json({ success:true });
 }));
 
 app.delete('/api/flashcards/:id', wait(async (req,res) => {
-  await run('DELETE FROM flashcards WHERE id=?',[req.params.id]);
+  const userId = req.headers['x-user-id'] || null;
+  await run('DELETE FROM flashcards WHERE id=? AND subject_id IN (SELECT id FROM subjects WHERE user_id=? OR user_id IS NULL)',[req.params.id,userId]);
   res.json({ success:true });
 }));
 
 app.post('/api/flashcards/:id/review', wait(async (req,res) => {
+  const userId = req.headers['x-user-id'] || null;
   const { rating } = req.body;
-  const card = await get('SELECT * FROM flashcards WHERE id=?',[req.params.id]);
+  const card = await get('SELECT f.* FROM flashcards f JOIN subjects s ON f.subject_id=s.id WHERE f.id=? AND (s.user_id=? OR s.user_id IS NULL)',[req.params.id,userId]);
   if (!card) return res.status(404).json({ error:'not found' });
   let { ease_factor, interval_days } = card;
   if (rating===1) { interval_days=1; ease_factor=Math.max(1.3,ease_factor-0.2); }
@@ -115,53 +130,63 @@ app.post('/api/flashcards/:id/review', wait(async (req,res) => {
 
 // ─── SESSIONS ───────────────────────────────────────────────────────────────
 app.get('/api/sessions', wait(async (req,res) => {
+  const userId = req.headers['x-user-id'] || null;
   res.json(await all(`SELECT se.*, s.name as subject_name, s.color as subject_color
     FROM sessions se LEFT JOIN subjects s ON s.id=se.subject_id
-    ORDER BY se.completed_at DESC LIMIT 50`));
+    WHERE se.user_id=? OR (se.user_id IS NULL AND ? IS NULL)
+    ORDER BY se.completed_at DESC LIMIT 50`,[userId, userId]));
 }));
 
 app.post('/api/sessions', wait(async (req,res) => {
+  const userId = req.headers['x-user-id'] || null;
   const { subject_id, duration=25, mode='focus' } = req.body;
-  const { lastInsertRowid: id } = await run('INSERT INTO sessions (subject_id,duration,mode) VALUES (?,?,?)',[subject_id||null,duration,mode]);
+  const { lastInsertRowid: id } = await run('INSERT INTO sessions (subject_id,duration,mode,user_id) VALUES (?,?,?,?)',[subject_id||null,duration,mode,userId]);
   res.status(201).json({ id });
 }));
 
 // ─── NOTES ──────────────────────────────────────────────────────────────────
 app.get('/api/notes', wait(async (req,res) => {
+  const userId = req.headers['x-user-id'] || null;
   const { subject_id } = req.query;
-  res.json(subject_id
-    ? await all('SELECT * FROM notes WHERE subject_id=? ORDER BY updated_at DESC',[+subject_id])
-    : await all('SELECT * FROM notes ORDER BY updated_at DESC'));
+  if (subject_id) {
+    res.json(await all('SELECT * FROM notes WHERE subject_id=? AND (user_id=? OR user_id IS NULL) ORDER BY updated_at DESC',[+subject_id,userId]));
+  } else {
+    res.json(await all('SELECT * FROM notes WHERE user_id=? OR user_id IS NULL ORDER BY updated_at DESC',[userId]));
+  }
 }));
 
 app.post('/api/notes', wait(async (req,res) => {
+  const userId = req.headers['x-user-id'] || null;
   const { subject_id, title, content='' } = req.body;
   if (!title) return res.status(400).json({ error:'title required' });
-  const { lastInsertRowid: id } = await run('INSERT INTO notes (subject_id,title,content) VALUES (?,?,?)',[subject_id||null,title,content]);
+  const { lastInsertRowid: id } = await run('INSERT INTO notes (subject_id,title,content,user_id) VALUES (?,?,?,?)',[subject_id||null,title,content,userId]);
   res.status(201).json(await get('SELECT * FROM notes WHERE id=?',[id]));
 }));
 
 app.put('/api/notes/:id', wait(async (req,res) => {
+  const userId = req.headers['x-user-id'] || null;
   const { title, content } = req.body;
-  await run(`UPDATE notes SET title=?,content=?,updated_at=datetime('now') WHERE id=?`,[title,content,req.params.id]);
+  await run(`UPDATE notes SET title=?,content=?,updated_at=datetime('now') WHERE id=? AND (user_id=? OR user_id IS NULL)`,[title,content,req.params.id,userId]);
   res.json({ success:true });
 }));
 
 app.delete('/api/notes/:id', wait(async (req,res) => {
-  await run('DELETE FROM notes WHERE id=?',[req.params.id]);
+  const userId = req.headers['x-user-id'] || null;
+  await run('DELETE FROM notes WHERE id=? AND (user_id=? OR user_id IS NULL)',[req.params.id,userId]);
   res.json({ success:true });
 }));
 
 // ─── STATS ───────────────────────────────────────────────────────────────────
 app.get('/api/stats', wait(async (req,res) => {
-  const totalSubjects = (await get('SELECT COUNT(*) as c FROM subjects')).c;
-  const totalCards    = (await get('SELECT COUNT(*) as c FROM flashcards')).c;
-  const totalNotes    = (await get('SELECT COUNT(*) as c FROM notes')).c;
-  const totalMinutes  = (await get("SELECT COALESCE(SUM(duration),0) as t FROM sessions WHERE mode='focus'")).t;
-  const todaySessions = (await get("SELECT COUNT(*) as c FROM sessions WHERE date(completed_at)=date('now') AND mode='focus'")).c;
-  const cardsReviewed = (await get('SELECT COALESCE(SUM(review_count),0) as c FROM flashcards')).c;
+  const userId = req.headers['x-user-id'] || null;
+  const totalSubjects = (await get('SELECT COUNT(*) as c FROM subjects WHERE user_id=? OR user_id IS NULL',[userId])).c;
+  const totalCards    = (await get('SELECT COUNT(*) as c FROM flashcards WHERE subject_id IN (SELECT id FROM subjects WHERE user_id=? OR user_id IS NULL)',[userId])).c;
+  const totalNotes    = (await get('SELECT COUNT(*) as c FROM notes WHERE user_id=? OR user_id IS NULL',[userId])).c;
+  const totalMinutes  = (await get("SELECT COALESCE(SUM(duration),0) as t FROM sessions WHERE mode='focus' AND (user_id=? OR user_id IS NULL)",[userId])).t;
+  const todaySessions = (await get("SELECT COUNT(*) as c FROM sessions WHERE date(completed_at)=date('now') AND mode='focus' AND (user_id=? OR user_id IS NULL)",[userId])).c;
+  const cardsReviewed = (await get('SELECT COALESCE(SUM(review_count),0) as c FROM flashcards WHERE subject_id IN (SELECT id FROM subjects WHERE user_id=? OR user_id IS NULL)',[userId])).c;
 
-  const days = (await all(`SELECT DISTINCT date(completed_at) as d FROM sessions WHERE mode='focus' ORDER BY d DESC LIMIT 30`)).map(r=>r.d);
+  const days = (await all(`SELECT DISTINCT date(completed_at) as d FROM sessions WHERE mode='focus' AND (user_id=? OR user_id IS NULL) ORDER BY d DESC LIMIT 30`,[userId])).map(r=>r.d);
   let streak = 0;
   for (let i=0; i<days.length; i++) {
     const exp = new Date(Date.now()-i*86400000).toISOString().slice(0,10);
@@ -169,8 +194,8 @@ app.get('/api/stats', wait(async (req,res) => {
   }
 
   const activity = await all(`SELECT date(completed_at) as day, COUNT(*) as sessions, COALESCE(SUM(duration),0) as minutes
-    FROM sessions WHERE mode='focus' AND completed_at>=date('now','-6 days')
-    GROUP BY day ORDER BY day`);
+    FROM sessions WHERE mode='focus' AND completed_at>=date('now','-6 days') AND (user_id=? OR user_id IS NULL)
+    GROUP BY day ORDER BY day`,[userId]);
 
   res.json({ totalSubjects, totalCards, totalNotes, totalMinutes, todaySessions, cardsReviewed, streak, activity });
 }));
@@ -300,9 +325,9 @@ app.post('/api/auth/update-avatar', wait(async (req,res) => {
 
 // ─── SNIPPETS ───────────────────────────────────────────────────────────────
 app.get('/api/snippets', wait(async (req,res) => {
-  const { user_id } = req.query;
-  const query = user_id ? 'SELECT * FROM snippets WHERE user_id=? OR user_id IS NULL ORDER BY created_at DESC' : 'SELECT * FROM snippets ORDER BY created_at DESC';
-  const params = user_id ? [user_id] : [];
+  const userId = req.headers['x-user-id'] || req.query.user_id || null;
+  const query = userId ? 'SELECT * FROM snippets WHERE user_id=? OR user_id IS NULL ORDER BY created_at DESC' : 'SELECT * FROM snippets ORDER BY created_at DESC';
+  const params = userId ? [userId] : [];
   const rows = await all(query, params);
   res.json(rows.map(s => ({...s, tags: s.tags ? s.tags.split(',').filter(Boolean) : []})));
 }));
