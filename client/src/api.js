@@ -58,6 +58,7 @@ export const api = {
   ai: {
     chat:          (messages, subject) => req('/ai/chat', { method: 'POST', body: { messages, subject } }),
     generateCards: (topic, count, sid) => req('/ai/generate-cards', { method: 'POST', body: { topic, count, subject_id: sid } }),
+    generateStudyMaterials: (notesText, sid) => req('/ai/generate-study-materials', { method: 'POST', body: { notesText, subject_id: sid } }),
   },
   post: (path, body) => req(path, { method: 'POST', body }),
   get: (path) => req(path),

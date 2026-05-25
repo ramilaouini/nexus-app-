@@ -62,13 +62,13 @@ const ProceduralRealisticElf = ({ equipped }) => {
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
     if (group.current) {
-      // Extensive Movement: Flying, sweeping, orbiting around the canvas
-      group.current.position.y = Math.sin(t * 3) * 0.3 - 0.5;
-      group.current.position.x = Math.sin(t * 1.5) * 1.2;
-      group.current.position.z = Math.cos(t * 1.5) * 0.8;
-      group.current.rotation.y = Math.sin(t * 1.5) * 0.5 + Math.cos(t * 0.3) * 0.2;
-      group.current.rotation.z = Math.sin(t * 1.5) * 0.2;
-      group.current.rotation.x = Math.sin(t * 3) * 0.1;
+      // Gentle floating like a trained AI, no circular movement
+      group.current.position.y = Math.sin(t * 2) * 0.1 - 0.2;
+      group.current.position.x = 0;
+      group.current.position.z = 0;
+      group.current.rotation.y = Math.sin(t * 1) * 0.1;
+      group.current.rotation.z = 0;
+      group.current.rotation.x = Math.sin(t * 2) * 0.05;
     }
     // Dynamic flying poses for arms and legs
     if (leftArm.current) leftArm.current.rotation.x = Math.sin(t * 5) * 0.3 - 0.2;
@@ -177,28 +177,8 @@ export default function MiniGuide({ equipped }) {
   const [chatLog, setChatLog] = useState([{ sender: 'bot', text: 'Greetings! I am equipped and ready. How can I assist you today?' }]);
   const [inputVal, setInputVal] = useState('');
   
-  // Make the entire guide div float around the screen randomly
-  const [pos, setPos] = useState({ x: 30, y: 30 });
-  const [velocity, setVelocity] = useState({ x: 0.5, y: 0.3 });
-
-  useEffect(() => {
-    // A simple bounce-around logic so it floats on the screen instead of sitting still
-    const interval = setInterval(() => {
-       setPos(p => {
-          let newX = p.x + velocity.x;
-          let newY = p.y + velocity.y;
-          let nvX = velocity.x;
-          let nvY = velocity.y;
-
-          if(newX > window.innerWidth - 300 || newX < 0) nvX = -velocity.x;
-          if(newY > window.innerHeight - 450 || newY < 0) nvY = -velocity.y;
-
-          setVelocity({ x: nvX, y: nvY });
-          return { x: newX, y: newY };
-       });
-    }, 50);
-    return () => clearInterval(interval);
-  }, [velocity]);
+  // Static position in the corner
+  const pos = { x: 30, y: 30 };
 
   const handleAsk = (e) => {
     e.preventDefault();
@@ -215,7 +195,7 @@ export default function MiniGuide({ equipped }) {
       position: 'fixed', 
       bottom: pos.y + 'px', 
       right: pos.x + 'px', 
-      zIndex: 9999, 
+      zIndex: 50, 
       display: 'flex', flexDirection: 'column', alignItems: 'flex-end', pointerEvents: 'none',
       transition: 'bottom 0.1s linear, right 0.1s linear'
     }}>
@@ -224,7 +204,8 @@ export default function MiniGuide({ equipped }) {
           background: 'rgba(15, 15, 20, 0.9)', border: '1px solid var(--primary)', borderRadius: '16px',
           padding: '20px', marginBottom: '20px', width: '350px', color: 'var(--text-bright)',
           boxShadow: '0 10px 40px rgba(0,0,0,0.8)', backdropFilter: 'blur(20px)', animation: 'fadeIn 0.3s ease',
-          pointerEvents: 'auto', display: 'flex', flexDirection: 'column', maxHeight: '400px'
+          pointerEvents: 'auto', display: 'flex', flexDirection: 'column', maxHeight: '400px',
+          zIndex: 100 // Chat box above text
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px', marginBottom: '10px' }}>
              <h4 style={{ margin: 0, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -254,6 +235,7 @@ export default function MiniGuide({ equipped }) {
         style={{
           width: '280px', height: '400px', pointerEvents: 'auto', cursor: open ? 'default' : 'pointer',
           borderRadius: '24px', overflow: 'hidden', position: 'relative', border: open ? '2px solid var(--primary)' : '2px solid transparent',
+          zIndex: -1, // Elf behind text
           boxShadow: open ? '0 0 30px var(--primary)' : 'none', transition: 'all 0.3s'
         }}
       >

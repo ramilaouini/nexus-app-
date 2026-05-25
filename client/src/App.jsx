@@ -24,6 +24,7 @@ import ShipView       from './views/ShipView';
 import MapsView       from './views/MapsView';
 import BackpackView   from './views/BackpackView';
 import StatsView      from './views/StatsView';
+import DeskView       from './views/DeskView';
 import LoungeView     from './views/LoungeView';
 import MapView        from './views/MapView';
 import CinemaView     from './views/CinemaView';
@@ -244,6 +245,7 @@ export default function App() {
           {view === 'backpack'   && <BackpackView key={viewKey} />}
           {view === 'stats'      && <StatsView key={viewKey} />}
           {view === 'lounge'     && <LoungeView key={viewKey} />}
+          {view === 'desk'       && <DeskView key={viewKey} />}
           {view === 'map'        && <MapView key={viewKey} />}
           {view === 'cinema'     && <CinemaView key={viewKey} />}
           {view === 'spaces'     && <SpacesView key={viewKey} />}

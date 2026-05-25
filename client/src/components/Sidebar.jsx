@@ -29,6 +29,7 @@ const WORKSPACES = [
     accentDim: 'rgba(168, 85, 247, 0.12)',
     accentGlow: 'rgba(168, 85, 247, 0.35)',
     items: [
+      { id: 'desk',         icon: '🪑', label: 'DESK' },
       { id: 'lounge',       icon: '💬', label: 'LOUNGE' },
       { id: 'spaces',       icon: '🌌', label: 'SPACES' },
       { id: 'map',          icon: '🗺️', label: 'WORLD' },

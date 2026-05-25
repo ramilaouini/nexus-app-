@@ -245,6 +245,45 @@ app.post('/api/ai/generate-cards', async (req,res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+app.post('/api/ai/generate-study-materials', async (req,res) => {
+  const { notesText, subject_id } = req.body;
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return res.status(400).json({ error:'Add GROQ_API_KEY to your .env file' });
+  try {
+    const prompt = `You are an expert tutor. Create study materials based on the following notes.
+    Generate a strict JSON object containing two arrays:
+    1. "flashcards": array of 10 items { "front": "question", "back": "answer" }.
+    2. "quiz": array of 5 items { "question": "question text", "options": ["opt1", "opt2", "opt3", "opt4"], "answer": "correct option text" }.
+    Return ONLY valid JSON. Do not include markdown codeblocks or explanation.
+    
+    Notes:
+    ${notesText}`;
+
+    const r = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({ 
+        model: 'llama-3.3-70b-versatile',
+        response_format: { type: "json_object" },
+        messages: [{ role: 'user', content: prompt }] 
+      })
+    });
+    const data = await r.json();
+    if (data.error) return res.status(500).json({ error: data.error.message });
+    const text = data.choices[0].message.content.trim();
+    const materials = JSON.parse(text);
+    
+    // Automatically save flashcards to the database if subject_id is provided
+    if (subject_id && materials.flashcards) {
+      for (const c of materials.flashcards) {
+        await run(`INSERT INTO flashcards (subject_id,front,back) VALUES (?,?,?)`, [+subject_id, c.front, c.back]);
+      }
+    }
+    
+    res.json(materials);
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 app.post('/api/ai/random-snippet', async (req,res) => {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return res.status(400).json({ error:'Add GROQ_API_KEY to your .env file' });

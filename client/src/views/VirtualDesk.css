@@ -1,0 +1,209 @@
+.desk-view-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.desk-layout {
+  display: flex;
+  flex: 1;
+  padding: 20px 40px;
+  gap: 30px;
+  min-height: 0;
+}
+
+.desk-left-panel {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.inventory-box {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.inventory-item {
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: 12px;
+  padding: 15px 10px;
+  text-align: center;
+  cursor: grab;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.inventory-item:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 4px 12px rgba(0, 229, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.inventory-item:active {
+  cursor: grabbing;
+}
+
+.item-icon {
+  font-size: 2rem;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+.item-name {
+  font-size: 0.8rem;
+  color: var(--text-bright);
+}
+
+.desk-right-panel {
+  flex: 1;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 70%);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+}
+
+/* ISOMETRIC CSS */
+.isometric-room-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  perspective: 1000px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.room-grid {
+  width: 600px;
+  height: 600px;
+  position: relative;
+  transform-style: preserve-3d;
+  /* Rotate down to create isometric feel */
+  transform: rotateX(60deg) rotateZ(-45deg);
+}
+
+.floor {
+  position: absolute;
+  bottom: 0; right: 0;
+  width: 100%; height: 100%;
+  background: 
+    linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%, rgba(255,255,255,0.05)), 
+    linear-gradient(45deg, rgba(255,255,255,0.05) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.05) 75%, rgba(255,255,255,0.05));
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
+  background-color: #1c2331;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0,229,255,0.1);
+  transition: all 0.3s;
+}
+
+.wall {
+  position: absolute;
+  background: linear-gradient(to bottom, #2b3b55, #1c2331);
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+}
+
+.wall-left {
+  width: 20px; height: 100%;
+  left: -20px; bottom: 0;
+  transform-origin: right;
+  transform: rotateY(-90deg);
+}
+
+.wall-right {
+  width: 100%; height: 20px;
+  top: -20px; right: 0;
+  transform-origin: bottom;
+  transform: rotateX(90deg);
+}
+
+.main-desk {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 180px;
+  height: 100px;
+  background: #654321;
+  border-radius: 8px;
+  transform: translate(-50%, -50%) translateZ(40px);
+  box-shadow: 10px 10px 20px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.main-desk::before {
+  content: '';
+  position: absolute;
+  top: 100%; left: 10px;
+  width: 10px; height: 100px;
+  background: #3e2812;
+  transform-origin: top;
+  transform: rotateX(-90deg);
+}
+
+.main-desk::after {
+  content: '';
+  position: absolute;
+  top: 100%; right: 10px;
+  width: 10px; height: 100px;
+  background: #3e2812;
+  transform-origin: top;
+  transform: rotateX(-90deg);
+}
+
+.laptop {
+  transform: rotateX(-60deg) rotateZ(45deg);
+  font-size: 3rem;
+  filter: drop-shadow(0 10px 5px rgba(0,0,0,0.5)) drop-shadow(0 0 20px var(--cyan));
+}
+
+.placed-item {
+  position: absolute;
+  /* Reverse the isometric rotation for the item icon so it stands 'upright' */
+  transform: rotateZ(45deg) rotateX(-60deg) translateZ(50px);
+  font-size: 3.5rem;
+  cursor: grab;
+  user-select: none;
+  filter: drop-shadow(0 10px 10px rgba(0,0,0,0.8));
+}
+
+.placed-item:active {
+  cursor: grabbing;
+}
+
+.remove-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #ff4757;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+
+.placed-item:hover .remove-btn {
+  opacity: 1;
+}

@@ -69,6 +69,25 @@ export default function NotesView() {
     load();
   };
 
+  const [generating, setGenerating] = useState(false);
+  const handleGenerateMaterials = async () => {
+    if (!draft.content || draft.content.trim().length === 0) {
+      alert("Note is empty. Add some text to generate materials.");
+      return;
+    }
+    setGenerating(true);
+    try {
+      const materials = await api.ai.generateStudyMaterials(draft.content, activeNote?.subject_id);
+      console.log('Generated:', materials);
+      // Since it saves to DB automatically if we have a subject_id, or we might just show an alert
+      alert(`✨ Magic Complete! Generated ${materials?.flashcards?.length || 0} flashcards and ${materials?.quiz?.length || 0} quiz questions.`);
+    } catch (err) {
+      console.error(err);
+      alert("Generation failed: " + err.message);
+    }
+    setGenerating(false);
+  };
+
   // Kanban Handlers
   const addTask = (e) => {
     e.preventDefault();
@@ -206,6 +225,14 @@ export default function NotesView() {
                       {subjectName(activeNote.subject_id)}
                     </div>
                   )}
+                  <button 
+                    className="btn btn-purple" 
+                    onClick={handleGenerateMaterials}
+                    disabled={generating}
+                    style={{ fontSize: 11, padding: '4px 10px', height: 'auto', display: 'flex', gap: '5px', alignItems: 'center' }}
+                  >
+                    {generating ? '✨ Generating...' : '✨ Generate Study Materials'}
+                  </button>
                 </div>
               </div>
 
